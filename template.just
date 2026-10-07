@@ -6,6 +6,9 @@
 template-ci:
     #!/usr/bin/env bash
     set -euo pipefail
+    # This repo's mise.toml points hk at template.hk.pkl; the generated project must use its own
+    # hk.pkl, and mise does not unset variables inherited from a parent directory's config.
+    unset HK_FILE
     work=$(mktemp -d "${RUNNER_TEMP:-${TMPDIR:-/tmp}}/template-ci.XXXXXX")
     report="{{ root }}/target/harness/template-ci.json"; mkdir -p "$(dirname "$report")"
     [ "${KEEP:-0}" = 1 ] || trap 'cd /; (cd "$work/demo-app-2" 2>/dev/null && just down >/dev/null 2>&1); (cd "$work/demo-app" 2>/dev/null && just down >/dev/null 2>&1); rm -rf "$work"' EXIT
@@ -41,6 +44,7 @@ template-ci:
     mise trust -q && mise install -q >&2
     eval "$(mise env -s bash)"
     just bootstrap >&2
+    hk validate 2>&1 | grep -q '/demo-app/hk.pkl is valid' || { echo "hk is not using the generated project's hk.pkl" >&2; exit 1; }
     git add -A && git -c user.name=template-ci -c user.email=template-ci@localhost commit -qm "lockfiles"
 
     step "5. tiers and harness"
