@@ -1,0 +1,7 @@
+# Tool versions for every developer machine and CI runner. `mise install` installs all of them.
+[tools]
+just = "1.58.0"
+jq = "1.8.2"
+
+[env]
+PROJECT_NAME = "demo-app"

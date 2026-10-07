@@ -1,0 +1,7 @@
+/target/
+/.harness/
+/harness/*/target/
+/harness/fuzz/artifacts/
+/harness/fuzz/coverage/
+.env.local
+*.profraw

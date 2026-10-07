@@ -1,0 +1,137 @@
+[workspace]
+members = ["crates/*", "harness/checks"]
+exclude = ["harness/dst", "harness/fuzz", "harness/lints"]
+resolver = "3"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.98.1"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/acme/demo-app"
+description = "A Rust service"
+publish = false
+
+[workspace.dependencies]
+demo-app-core = { path = "crates/demo-app-core" }
+demo-app-runtime = { path = "crates/demo-app-runtime" }
+demo-app-server = { path = "crates/demo-app-server" }
+demo-app-cli = { path = "crates/demo-app-cli" }
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+rust_2018_idioms = { level = "deny", priority = -1 }
+unreachable_pub = "deny"                # visibility is the API surface agents read
+missing_debug_implementations = "deny"  # every type is printable in logs and test failures
+missing_docs = "warn"                   # -D warnings makes it fail; binaries' private items are exempt
+unused_qualifications = "deny"
+unused_lifetimes = "deny"
+redundant_lifetimes = "deny"
+let_underscore_drop = "deny"
+trivial_casts = "deny"
+trivial_numeric_casts = "deny"
+non_ascii_idents = "deny"
+unit_bindings = "deny"
+unfulfilled_lint_expectations = "deny"
+unknown_lints = "deny"                  # a renamed lint after a toolchain bump fails loudly
+renamed_and_removed_lints = "deny"
+unexpected_cfgs = { level = "deny", check-cfg = ["cfg(kani)", "cfg(fuzzing)", "cfg(coverage_nightly)"] }
+
+[workspace.lints.rustdoc]
+broken_intra_doc_links = "deny"
+private_intra_doc_links = "deny"
+
+[workspace.lints.clippy]
+# Groups
+all = { level = "deny", priority = -1 }        # correctness, suspicious, style, complexity, perf
+pedantic = { level = "deny", priority = -1 }
+cargo = { level = "deny", priority = -1 }
+
+# Pedantic/cargo relaxations (noise without much value here)
+must_use_candidate = "allow"
+missing_errors_doc = "allow"
+module_name_repetitions = "allow"
+similar_names = "allow"
+multiple_crate_versions = "allow"   # cargo-deny reports duplicates instead
+
+# Restriction: panics and silent failure
+unwrap_used = "deny"
+expect_used = "deny"
+panic = "deny"
+todo = "deny"
+unimplemented = "deny"
+unreachable = "deny"
+exit = "deny"
+unwrap_in_result = "deny"
+panic_in_result_fn = "deny"
+get_unwrap = "deny"
+indexing_slicing = "deny"
+string_slice = "deny"
+unused_result_ok = "deny"
+map_err_ignore = "deny"
+let_underscore_must_use = "deny"
+let_underscore_untyped = "deny"
+mem_forget = "deny"
+
+# Restriction: types and numbers
+as_conversions = "deny"
+float_cmp_const = "deny"
+lossy_float_literal = "deny"
+fn_to_numeric_cast_any = "deny"
+
+# Restriction: output, lint hygiene, unsafe
+dbg_macro = "deny"
+print_stdout = "deny"
+print_stderr = "deny"
+allow_attributes = "deny"
+allow_attributes_without_reason = "deny"
+undocumented_unsafe_blocks = "deny"
+multiple_unsafe_ops_per_block = "deny"
+
+# Restriction: determinism and change safety
+iter_over_hash_type = "deny"
+wildcard_enum_match_arm = "deny"
+rest_pat_in_fully_bound_structs = "deny"
+unneeded_field_pattern = "deny"
+
+# Restriction: readable, findable code
+missing_assert_message = "deny"
+tests_outside_test_module = "deny"
+mod_module_files = "deny"
+multiple_inherent_impl = "deny"
+shadow_unrelated = "deny"
+same_name_method = "deny"
+min_ident_chars = "deny"
+clone_on_ref_ptr = "deny"
+rc_buffer = "deny"
+rc_mutex = "deny"
+str_to_string = "deny"
+try_err = "deny"
+if_then_some_else_none = "deny"
+redundant_type_annotations = "deny"
+renamed_function_params = "deny"
+infinite_loop = "deny"
+verbose_file_reads = "deny"
+empty_drop = "deny"
+empty_structs_with_brackets = "deny"
+empty_enum_variants_with_brackets = "deny"
+
+# Nursery picks (individually, never the whole group)
+future_not_send = "deny"
+significant_drop_in_scrutinee = "deny"
+fallible_impl_from = "deny"
+cognitive_complexity = "deny"
+redundant_clone = "deny"
+needless_collect = "deny"
+or_fun_call = "deny"
+use_self = "deny"
+derive_partial_eq_without_eq = "deny"
+trait_duplication_in_bounds = "deny"
+type_repetition_in_bounds = "deny"
+
+[profile.release]
+debug = "line-tables-only"   # asm, profiles and backtraces map to source
+
+[profile.profiling]
+inherits = "release"
+debug = true

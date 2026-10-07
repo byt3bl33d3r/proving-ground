@@ -1,0 +1,52 @@
+# Protected file: ask before editing (AGENTS.md). Never loosen a threshold to make code pass.
+msrv = "1.98.1"
+avoid-breaking-exported-api = false
+
+# Small units are easier for agents to read, test and change
+too-many-lines-threshold = 80
+cognitive-complexity-threshold = 15
+excessive-nesting-threshold = 4
+too-many-arguments-threshold = 5
+type-complexity-threshold = 200
+max-fn-params-bools = 1
+max-struct-bools = 3
+min-ident-chars-threshold = 2
+# Short names that stay readable in closures and loops
+allowed-idents-below-min-chars = ["i", "j", "n", "x", "y", "e", "k", "v", "f", ".."]
+
+# Tests may panic, index and print
+allow-unwrap-in-tests = true
+allow-expect-in-tests = true
+allow-panic-in-tests = true
+allow-indexing-slicing-in-tests = true
+allow-print-in-tests = true
+allow-dbg-in-tests = true
+
+# Bans. Each reason is the remediation an agent sees in the clippy error.
+disallowed-methods = [
+  { path = "std::time::Instant::now", reason = "Use core::platform::Clock::now(). Direct time breaks DST determinism. See docs/testing/determinism.md" },
+  { path = "std::time::SystemTime::now", reason = "Use core::platform::Clock::now(). Direct time breaks DST determinism. See docs/testing/determinism.md" },
+  { path = "tokio::time::sleep", reason = "Use core::platform::Clock::sleep(), so simulated time controls it" },
+  { path = "std::thread::sleep", reason = "Use core::platform::Clock::sleep(), so simulated time controls it" },
+  { path = "rand::thread_rng", reason = "Use the core::platform::Rng from AppState, so seeds reproduce runs", allow-invalid = true },
+  { path = "rand::rng", reason = "Use the core::platform::Rng from AppState, so seeds reproduce runs", allow-invalid = true },
+  { path = "rand::random", reason = "Use the core::platform::Rng from AppState, so seeds reproduce runs", allow-invalid = true },
+  { path = "std::env::var", reason = "Read configuration through runtime::config" },
+]
+disallowed-types = [
+  { path = "std::collections::HashMap", reason = "Use core::platform::HashMap; iteration order must be deterministic under simulation" },
+  { path = "std::collections::HashSet", reason = "Use core::platform::HashSet; iteration order must be deterministic under simulation" },
+]
+disallowed-macros = [
+  { path = "std::println", reason = "Use tracing with structured fields. User-facing CLI output goes through cli::output only" },
+  { path = "std::eprintln", reason = "Use tracing with structured fields. User-facing CLI output goes through cli::output only" },
+  { path = "std::print", reason = "Use tracing with structured fields. User-facing CLI output goes through cli::output only" },
+  { path = "std::eprint", reason = "Use tracing with structured fields. User-facing CLI output goes through cli::output only" },
+  { path = "std::dbg", reason = "Use tracing with structured fields. User-facing CLI output goes through cli::output only" },
+  { path = "log::trace", reason = "Use tracing with structured fields, not the log crate", allow-invalid = true },
+  { path = "log::debug", reason = "Use tracing with structured fields, not the log crate", allow-invalid = true },
+  { path = "log::info", reason = "Use tracing with structured fields, not the log crate", allow-invalid = true },
+  { path = "log::warn", reason = "Use tracing with structured fields, not the log crate", allow-invalid = true },
+  { path = "log::error", reason = "Use tracing with structured fields, not the log crate", allow-invalid = true },
+  { path = "log::log", reason = "Use tracing with structured fields, not the log crate", allow-invalid = true },
+]

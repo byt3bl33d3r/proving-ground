@@ -1,0 +1,9 @@
+# Cargo settings for every invocation in this workspace. Task logic lives in the justfile, not here.
+# target/ stays per worktree (the default) so parallel agents never share Cargo's build lock;
+# sccache (RUSTC_WRAPPER in mise.toml) shares compiled dependencies between worktrees instead.
+
+[net]
+retry = 5
+
+[cargo-new]
+vcs = "none"
