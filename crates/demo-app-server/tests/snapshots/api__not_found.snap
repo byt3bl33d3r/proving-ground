@@ -1,0 +1,11 @@
+---
+source: crates/demo-app-server/tests/api.rs
+expression: "&missing"
+---
+{
+  "error": {
+    "code": "not_found",
+    "message": "[message with id]",
+    "request_id": "[request_id]"
+  }
+}

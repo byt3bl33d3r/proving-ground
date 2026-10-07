@@ -1,0 +1,11 @@
+---
+source: crates/demo-app-server/tests/api.rs
+expression: "&json"
+---
+{
+  "error": {
+    "code": "no_route",
+    "message": "no route matches this method and path",
+    "request_id": "[request_id]"
+  }
+}

@@ -1,0 +1,11 @@
+---
+source: crates/demo-app-server/tests/api.rs
+expression: "&json"
+---
+{
+  "error": {
+    "code": "method_not_allowed",
+    "message": "Method Not Allowed",
+    "request_id": "[request_id]"
+  }
+}

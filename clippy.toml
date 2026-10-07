@@ -10,7 +10,7 @@ too-many-arguments-threshold = 5
 type-complexity-threshold = 200
 max-fn-params-bools = 1
 max-struct-bools = 3
-min-ident-chars-threshold = 2
+min-ident-chars-threshold = 1
 # Short names that stay readable in closures and loops
 allowed-idents-below-min-chars = ["i", "j", "n", "x", "y", "e", "k", "v", "f", ".."]
 

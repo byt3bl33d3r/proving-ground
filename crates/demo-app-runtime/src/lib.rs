@@ -1,1 +1,3 @@
-//! Configuration loading and telemetry initialization for the binaries.
+//! Configuration loading and telemetry initialization, used only by the binaries.
+
+pub mod config;

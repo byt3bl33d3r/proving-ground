@@ -1,0 +1,11 @@
+---
+source: crates/demo-app-server/tests/api.rs
+expression: "&json"
+---
+{
+  "error": {
+    "code": "validation_error",
+    "message": "invalid input: name must not be empty",
+    "request_id": "[request_id]"
+  }
+}

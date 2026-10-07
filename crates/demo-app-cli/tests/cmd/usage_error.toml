@@ -1,0 +1,5 @@
+bin.name = "demo-app"
+env.remove = ["APP_URL", "RUST_LOG", "APP_LOG_JSON"]
+env.add = { APP_HARNESS_DIR = "/nonexistent-harness" }
+args = ["items", "frobnicate"]
+status.code = 1
