@@ -1,17 +1,13 @@
 # Panic allowlist for `just panic-audit` (protected file: ask before editing).
-# One function per line: functions in the release build of the core crate that directly call
-# a panicking function. Lines starting with # are reasons; give every entry one.
+# One function per line: functions of the core crate whose release build directly calls a
+# panicking function. Lines starting with # are reasons; give every entry one.
 # A new entry fails pre-commit with: "New panic path in <fn>. Remove it (iterators, hoisted
 # assert, checked ops) or add it to the allowlist with a reason in the PR."
 
-# std BTreeMap internals monomorphized for the in-memory repository (unreachable unwraps).
-<alloc::collections::btree::map::Values<demo_app_core::types::ItemId, demo_app_core::types::Item> as core::iter::traits::iterator::Iterator>::next
+# BTreeMap insert/remove/iteration internals inlined into the in-memory repository
+# (std's own unreachable unwraps).
+<demo_app_core::repo::InMemoryItemRepo as demo_app_core::repo::ItemRepo>::delete
 <demo_app_core::repo::InMemoryItemRepo as demo_app_core::repo::ItemRepo>::insert
 <demo_app_core::repo::InMemoryItemRepo as demo_app_core::repo::ItemRepo>::list
 # ToString: panics only if Display returns an error, which ItemId's Display never does.
 <alloc::string::String as core::convert::From<demo_app_core::types::ItemId>>::from
-# std::future::Ready panics when polled after completion; each repository future is awaited once.
-<core::future::ready::Ready<core::result::Result<(), demo_app_core::repo::RepoError>> as core::future::future::Future>::poll
-<core::future::ready::Ready<core::result::Result<bool, demo_app_core::repo::RepoError>> as core::future::future::Future>::poll
-<core::future::ready::Ready<core::result::Result<core::option::Option<demo_app_core::types::Item>, demo_app_core::repo::RepoError>> as core::future::future::Future>::poll
-<core::future::ready::Ready<core::result::Result<demo_app_core::repo::Listed, demo_app_core::repo::RepoError>> as core::future::future::Future>::poll

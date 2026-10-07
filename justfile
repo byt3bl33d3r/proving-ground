@@ -184,14 +184,18 @@ affected-tests *files:
     if $all; then just test; elif [ ${#pkgs[@]} -gt 0 ]; then cargo nextest run --locked --no-tests=warn -E 'not binary(e2e)' "${pkgs[@]}"; fi
 
 # Functions in core's release build that can panic, compared with docs/generated/panic-allowlist.txt
-panic-audit:
+# Uses $NIGHTLY with -Zcross-crate-inline-threshold=never: on stable, small functions are only
+# codegen'd in the crates that call them, so their panic paths would be invisible here.
+panic-audit: nightly
     #!/usr/bin/env bash
     set -uo pipefail
     mkdir -p target/harness
     crate=$(tr - _ <<<"{{project}}")_core
-    regex='core::panicking::|std::panicking::begin_panic|unwrap_failed|expect_failed|index_len_fail|index_order_fail|slice_error_fail|str_index_overflow_fail'
-    cargo asm --lib -p "{{project}}-core" --llvm -s --json --callers-of "$regex" 1 2>target/harness/panic-audit.log \
-      | jq -r '.[].name' | grep "${crate}::" | grep -v '^core::ptr::drop_glue' | sort -u > target/harness/panic-callers.txt
+    # --callers-of matches mangled names, hence fragments rather than paths
+    regex='panic_bounds_check|panic_fmt|panic_const|panic_nounwind|panic_explicit|begin_panic|9panicking5panic|assert_failed|unwrap_failed|expect_failed|index_len_fail|index_order_fail|slice_error_fail|str_index_overflow_fail'
+    RUSTFLAGS="-Zcross-crate-inline-threshold=never" CARGO_TARGET_DIR=target/panic-audit \
+      cargo +"$NIGHTLY" asm --lib -p "{{project}}-core" --llvm -s --json --callers-of "$regex" 1 2>target/harness/panic-audit.log \
+      | jq -r '.[].name' | grep -E "^<?${crate}::| as [^ ]*${crate}::" | sort -u > target/harness/panic-callers.txt
     new=$(grep -v -e '^#' -e '^$' docs/generated/panic-allowlist.txt | sort -u | comm -23 target/harness/panic-callers.txt -)
     count=$(grep -c . <<<"$new" || true)
     jq -n --arg new "$new" --argjson count "$count" '{check: "panic-audit", ok: ($count == 0), summary: (if $count == 0 then "no new panic paths" else "\($count) new panic path(s)" end), new_paths: ($new | split("\n") | map(select(. != ""))), details_path: "target/harness/panic-callers.txt", repro: "just panic-audit"}' > target/harness/panic-audit.json
@@ -200,6 +204,11 @@ panic-audit:
       echo "New panic path in $fn. Remove it (iterators, hoisted assert, checked ops) or add it to the allowlist with a reason in the PR." >&2
     done <<<"$new"
     exit 1
+
+# Install the pinned analysis nightly ($NIGHTLY) if missing
+[private]
+nightly:
+    rustup toolchain list | grep -q "^$NIGHTLY" || rustup toolchain install "$NIGHTLY" --profile minimal -c rust-src,llvm-tools-preview,miri,clippy,rustfmt >&2
 
 # Pre-push subset of tier 1 (see hk.pkl)
 ci-fast:
