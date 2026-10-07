@@ -26,6 +26,23 @@ Generated from the rust-project-template at v1.0.0.
 - Starting size: non-test code is core 537, runtime 76, server 340, cli 569 lines, above the
   "about 200" guideline. The extra lines are the surface the spec requires (platform seams,
   buggify, typed errors, the exit-code mapping), not padding.
+- **hk hooks are git-config hooks.** `hk install --mise` on Git >= 2.54 writes `hook.hk-pre-commit`
+  entries to `.git/config` instead of `.git/hooks/pre-commit`. The "hooks installed" guard checks
+  `git hook list pre-commit` (and falls back to the legacy file for older Git).
+- **hk builtins:** there is no `gitleaks_staged`; pre-commit uses `(Builtins.gitleaks) { scan = "staged" }`.
+  The `check`/`fix` hooks call `just secrets {{files}}` because `gitleaks dir` scans a single path.
+  `Builtins.taplo` only lints, so the step uses `Builtins.taplo_format` (`.taplo.toml` keeps the
+  layout). Every custom step is a `CommandSpec` with an `effect`, which `hk run check --safe`
+  (the agent Stop hook) requires.
+- **Agent Stop hook** is hk's generated snippet (`hk agent hooks --target claude-code|codex`): it runs
+  `hk agent stop-hook`, i.e. `hk run check --safe` on modified files, and blocks with a JSON
+  decision. It checks but does not fix, unlike the spec's `hk fix --unstaged && hk check --unstaged`.
+- **Panic audit** uses `cargo +$NIGHTLY asm --llvm` with `-Zcross-crate-inline-threshold=never`:
+  since Rust 1.75 small non-generic functions are only codegen'd in their callers' crates, so on
+  stable a new panicking helper is invisible. `--callers-of` matches *mangled* names, so the
+  regex uses fragments (`panic_bounds_check|unwrap_failed|...|9panicking5panic`), and only
+  functions owned by the core crate are kept (std generics instantiated with core types are not).
+  `--llvm` mode also works on macOS, where assembly mode finds no call graph.
 - `just check` skips the "hooks installed" guard when `CI=true` (CI runners never run `hk install`).
 
 ## Verified values
@@ -36,3 +53,5 @@ Generated from the rust-project-template at v1.0.0.
 | Lint table (Section 9) | every name known to clippy 1.98.1 | `cargo clippy -- -D warnings` with `unknown_lints = "deny"` |
 | clippy bans | `disallowed-*` reasons shown in errors; `allow-invalid = true` for crates not in the graph (rand, log) | planted `println!`/`Instant::now()` |
 | just | 1.58.0 | `mise install` |
+| hk / pkl | 2.5.0 / 0.32.1 | `hk validate`, `pkl eval hk.pkl`, real commits |
+| Analysis nightly | nightly-2026-10-07 (miri, rust-src, llvm-tools on macOS arm64, Linux x86_64/aarch64) | dist manifests, rustup install |
