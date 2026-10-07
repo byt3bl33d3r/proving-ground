@@ -1,3 +1,12 @@
+---
+type: Guide
+title: Template notes
+description: Deviations from the template spec and the tool versions verified while building the template.
+tags: [template, deviations, versions]
+status: stable
+code_refs: [mise.toml]
+---
+
 # Template notes: deviations and verified values
 
 Generated from the rust-project-template at v1.0.0.
@@ -55,6 +64,27 @@ Generated from the rust-project-template at v1.0.0.
 - `std::env::var_os` is banned alongside `std::env::var`.
 - `core -> server` as a normal dependency is a Cargo cycle, so Cargo rejects it before any test
   runs; the architecture test is demonstrated with a dev-dependency (and with `cli -> server`).
+- **okf (v0.6.0):** `okf validate --strict --drift` does not fail on expired `stale_after` (needs
+  `--stale`) and never fails on drift, so `just knowledge` runs `--strict --drift --stale --json`
+  and fails on any warning. Plans cannot use `status: active|completed` (only draft, stable,
+  deprecated): active plans are `status: draft` with tag `active`, finished ones `status: stable`
+  with tag `completed`. There is no `trust` field: trust comes from `verified` entries, which only
+  humans add. Shipped concepts carry no `stale_after` (a fixed date would expire in every
+  generated project). `docs/generated/` stays: okf ignores non-Markdown files.
+- **Agents:** Claude's Stop hook is hk's generated snippet; a `WorktreeRemove` hook runs
+  `just down` in the worktree before removing it (replacing workz's `pre_done`). Codex reads
+  `.codex/config.toml` and `.codex/hooks.json` only for trusted projects, and asks to trust each
+  hook once. hk's own MCP server is added to both agents. A rust-analyzer MCP server and a Codex
+  skill are not added (no verified project-level skills directory for Codex 0.157).
+- **Kani:** the quick tier proves id parsing, the `Page` invariant and pagination math in seconds;
+  the `ItemName` invariant and full-length id round trips are tier 3 (CBMC is slow on symbolic
+  strings; `str::trim` alone took 254 s), and `ItemName` trims ASCII whitespace only.
+- **Miri** runs on core; tests that need tokio's runtime are ignored off Linux (Miri has no
+  kqueue), and proptests and real-clock tests are ignored under Miri (file and clock access).
+- **Fuzz corpora:** the template ships a seed corpus only; generated projects commit their own
+  minimized corpora (`cargo fuzz cmin`).
+- **cargo-mutants** exit code 3 (some mutants timed out) counts as a pass: a timeout means the
+  tests caught the mutant.
 - `just check` skips the "hooks installed" guard when `CI=true` (CI runners never run `hk install`).
 
 ## Verified values

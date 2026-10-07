@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Bash(just:*)",
+      "Bash(cargo:*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(jq:*)",
+      "Bash(okf search:*)",
+      "Bash(okf show:*)",
+      "Bash(okf validate:*)"
+    ],
+    "ask": [
+      "Edit(/clippy.toml)",
+      "Edit(/deny.toml)",
+      "Edit(/Cargo.toml)",
+      "Edit(/.config/nextest.toml)",
+      "Edit(/mise.toml)",
+      "Edit(/docs/observability/budgets.md)",
+      "Edit(/docs/generated/lint-exceptions.txt)",
+      "Edit(/docs/generated/panic-allowlist.txt)",
+      "Edit(/harness/lints/**)",
+      "Edit(/harness/checks/tests/arch.rs)",
+      "Bash(git push:*)"
+    ],
+    "deny": [
+      "Bash(git commit --no-verify:*)",
+      "Bash(git commit -n:*)",
+      "Bash(git push --no-verify:*)",
+      "Bash(*--no-verify*)",
+      "Bash(HK_SKIP_STEPS=*)",
+      "Bash(HK_SKIP_STEP=*)",
+      "Bash(HK_SKIP_HOOK=*)",
+      "Bash(HK_SKIP_HOOKS=*)",
+      "Bash(HK=0 *)",
+      "Bash(hk uninstall:*)",
+      "Bash(git config hk.*)"
+    ]
+  },
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "hk agent stop-hook --target claude-code --timeout 570",
+            "timeout": 600
+          }
+        ]
+      }
+    ],
+    "WorktreeRemove": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "just worktree-remove",
+            "timeout": 120
+          }
+        ]
+      }
+    ]
+  }
+}

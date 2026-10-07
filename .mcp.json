@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "victoriametrics": { "command": "just", "args": ["mcp", "metrics"] },
+    "victorialogs": { "command": "just", "args": ["mcp", "logs"] },
+    "victoriatraces": { "command": "just", "args": ["mcp", "traces"] },
+    "okf-memory": { "command": "okf", "args": ["mcp", "docs"] },
+    "hk": { "command": "hk", "args": ["mcp", "--root", "."] }
+  }
+}

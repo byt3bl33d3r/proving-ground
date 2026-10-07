@@ -123,9 +123,9 @@ hooks-installed:
 
 # ── Tier 0 ─────────────────────────────────────────────────────────────────────────────────
 
-# Tier 0: fmt, clippy, tests, machete in every workspace (also runs on commit)
+# Tier 0: fmt, clippy, tests, machete in every workspace, project memory (also runs on commit)
 check: hooks-installed
-    just gates fmt-check clippy test machete
+    just gates fmt-check clippy test machete knowledge
 
 # Format every workspace
 fmt:
@@ -142,6 +142,22 @@ clippy:
 # Unit, property, snapshot, transcript and architecture tests (not e2e)
 test *args:
     cargo nextest run --workspace --locked --no-tests=warn -E 'not binary(e2e) & not binary(asm)' {{args}}
+
+# Validate the docs/ OKF bundle: schema, links, drift, staleness. Any warning fails.
+knowledge:
+    #!/usr/bin/env bash
+    set -uo pipefail
+    mkdir -p target/harness
+    okf validate docs --strict --drift --stale --json > target/harness/okf-validate.json
+    jq '{check: "knowledge", ok: (.gate_passed and .is_conformant and ((.warnings // []) | length) == 0 and ((.errors // []) | length) == 0),
+         concepts: .concept_count, broken_links: ((.broken_links // []) | length), orphans: ((.orphans // []) | length),
+         drifted: ([(.warnings // [])[] | select(test("differs from concept description|not listed in parent index|does not exist|non-existent"))] | length),
+         stale: .stale_count, findings: ((.errors // []) + (.gate_findings // []) + (.warnings // [])),
+         summary: "\(.concept_count) concepts, \((.errors // []) | length) errors, \((.gate_findings // []) | length) gate findings, \((.warnings // []) | length) warnings",
+         details_path: "target/harness/okf-validate.json", repro: "okf validate docs --strict --drift --stale"}' \
+      target/harness/okf-validate.json > target/harness/knowledge.json
+    jq -r '.findings[]' target/harness/knowledge.json >&2
+    jq -e .ok target/harness/knowledge.json > /dev/null
 
 # Unused dependencies
 machete:
@@ -305,7 +321,7 @@ dylint:
 
 # Tier 1: everything CI runs on a pull request
 ci:
-    just gates fmt-check clippy test machete hk-all deny dylint coverage panic-audit asm-snapshots gungraun miri kani dst
+    just gates fmt-check clippy test machete knowledge hk-all deny dylint coverage panic-audit asm-snapshots gungraun miri kani dst
 
 # Pre-push subset of tier 1 (see hk.pkl)
 ci-fast:
@@ -520,6 +536,16 @@ harness-gc:
         docker compose -p "$name" down -v --remove-orphans >&2 && echo "{\"removed\":\"$name\"}"
       fi
     done
+
+# Claude Code WorktreeRemove hook: stop the worktree's stack, then remove the worktree
+[private]
+worktree-remove:
+    #!/usr/bin/env bash
+    set -uo pipefail
+    path=$(jq -r '.worktree_path // empty')
+    [ -n "$path" ] && [ -d "$path" ] || exit 0
+    (cd "$path" && just down) >&2 || true
+    git worktree remove --force "$path" >&2
 
 # Start a Victoria MCP server for this worktree (called by .mcp.json and .codex/config.toml)
 [no-exit-message]

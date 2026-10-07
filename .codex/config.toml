@@ -1,0 +1,21 @@
+# Codex project config (loaded once the project is trusted). Same MCP servers as .mcp.json.
+
+[mcp_servers.victoriametrics]
+command = "just"
+args = ["mcp", "metrics"]
+
+[mcp_servers.victorialogs]
+command = "just"
+args = ["mcp", "logs"]
+
+[mcp_servers.victoriatraces]
+command = "just"
+args = ["mcp", "traces"]
+
+[mcp_servers.okf-memory]
+command = "okf"
+args = ["mcp", "docs"]
+
+[mcp_servers.hk]
+command = "hk"
+args = ["mcp", "--root", "."]
