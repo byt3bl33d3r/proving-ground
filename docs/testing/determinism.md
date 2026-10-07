@@ -4,7 +4,7 @@ title: Determinism
 description: Why time, randomness, hashing order and network go through core::platform, and how tests stay deterministic.
 tags: [testing, determinism, platform, clock, rng]
 status: stable
-code_refs: [crates/demo-app-core/src/platform.rs, clippy.toml]
+code_refs: [crates/{{project-name}}-core/src/platform.rs, crates/{{project-name}}-core/src/platform/system.rs, clippy.toml]
 ---
 
 # Determinism
@@ -22,5 +22,5 @@ Every test must give the same result every run. So:
 
 `clippy.toml` bans `Instant::now`, `SystemTime::now`, `tokio::time::sleep`, `thread::sleep`,
 `rand::rng`, std hash maps and `Uuid::now_v7`, each with this page as the remedy. The one place
-allowed to call them is `platform/system.rs`. The [DST](/testing/dst.md) self-check
+allowed to call them is `core::platform::system`. The [DST](/testing/dst.md) self-check
 `dst_is_deterministic` catches anything that slips through.

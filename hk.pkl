@@ -28,11 +28,16 @@ local lint = new Mapping<String, Step> {
   }
   ["deny-offline"] {
     glob = List("**/Cargo.toml", "Cargo.lock", "deny.toml")
-    check = new CommandSpec { command = "cargo deny --offline check bans licenses sources"; effect = "read" }
+    check = new CommandSpec { command = "just deny-offline"; effect = "read" }
   }
   ["actionlint"] = Builtins.actionlint
+  ["just-recipes"] {
+    glob = List("justfile", "template.just")
+    check = new CommandSpec { command = "just lint-recipes"; effect = "read" }
+  }
+  // No glob: concepts list the code they govern in code_refs, so moving or deleting a file
+  // outside docs/ can break the bundle too. The check takes well under a second.
   ["knowledge"] {
-    glob = List("docs/**")
     check = new CommandSpec { command = "just knowledge"; effect = "read" }
   }
   // Warn only: agents see which protected files a change touches before they commit.

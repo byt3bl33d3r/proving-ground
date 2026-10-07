@@ -4,7 +4,7 @@ title: Architecture overview
 description: Crate layout (core, runtime, server, cli), the harness directory, and how one request flows through them.
 tags: [architecture, crates]
 status: stable
-code_refs: [crates/demo-app-core/src/lib.rs, crates/demo-app-server/src/lib.rs]
+code_refs: [crates/{{project-name}}-core/src/lib.rs, crates/{{project-name}}-runtime/src/lib.rs, crates/{{project-name}}-server/src/lib.rs, crates/{{project-name}}-cli/src/lib.rs, harness]
 ---
 
 # Architecture overview

@@ -6,8 +6,8 @@
 
 # BTreeMap insert/remove/iteration internals inlined into the in-memory repository
 # (std's own unreachable unwraps).
-<demo_app_core::repo::InMemoryItemRepo as demo_app_core::repo::ItemRepo>::delete
-<demo_app_core::repo::InMemoryItemRepo as demo_app_core::repo::ItemRepo>::insert
-<demo_app_core::repo::InMemoryItemRepo as demo_app_core::repo::ItemRepo>::list
+<{{crate_name}}_core::repo::InMemoryItemRepo as {{crate_name}}_core::repo::ItemRepo>::delete
+<{{crate_name}}_core::repo::InMemoryItemRepo as {{crate_name}}_core::repo::ItemRepo>::insert
+<{{crate_name}}_core::repo::InMemoryItemRepo as {{crate_name}}_core::repo::ItemRepo>::list
 # ToString: panics only if Display returns an error, which ItemId's Display never does.
-<alloc::string::String as core::convert::From<demo_app_core::types::ItemId>>::from
+<alloc::string::String as core::convert::From<{{crate_name}}_core::types::ItemId>>::from

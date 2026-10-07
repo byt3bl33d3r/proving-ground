@@ -46,6 +46,7 @@ API snapshots and CLI transcripts. Build none of this until a plan needs a UI.
 - **Enforced, not remembered.** The `evidence-required` check fails a PR that changes a UI crate
   without a new or updated journey: `UI change without evidence. Add or update a journey and run
   just record <journey> before|after; see docs/testing/evidence.md.` Pure refactors opt out with
-  the human-applied `no-visual-change` label.
+  the human-applied `no-visual-change` label. The how-to it points at is
+  [UI evidence](/testing/evidence.md).
 - **Budgets apply.** A journey also fails on console errors or a broken latency
   [budget](/observability/budgets.md), so the video is never the only signal.

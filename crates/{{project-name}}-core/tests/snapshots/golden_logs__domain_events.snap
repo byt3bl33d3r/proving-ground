@@ -1,0 +1,42 @@
+---
+source: crates/{{project-name}}-core/tests/golden_logs.rs
+expression: events
+---
+[
+  {
+    "fields": {
+      "item_id": "itm_c5fc598e707e7291",
+      "message": "item_created"
+    },
+    "level": "INFO",
+    "span": {
+      "item_id": "itm_c5fc598e707e7291",
+      "name": "create_item"
+    },
+    "spans": [
+      {
+        "item_id": "itm_c5fc598e707e7291",
+        "name": "create_item"
+      }
+    ],
+    "target": "{{crate_name}}_core::domain"
+  },
+  {
+    "fields": {
+      "item_id": "itm_c5fc598e707e7291",
+      "message": "item_deleted"
+    },
+    "level": "INFO",
+    "span": {
+      "item_id": "itm_c5fc598e707e7291",
+      "name": "delete_item"
+    },
+    "spans": [
+      {
+        "item_id": "itm_c5fc598e707e7291",
+        "name": "delete_item"
+      }
+    ],
+    "target": "{{crate_name}}_core::domain"
+  }
+]

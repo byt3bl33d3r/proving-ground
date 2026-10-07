@@ -2,7 +2,7 @@
 //! `ItemName` invariant and survives a JSON round trip.
 #![no_main]
 
-use demo_app_core::types::{CreateItem, ITEM_NAME_MAX_CHARS, ItemName};
+use {{crate_name}}_core::types::{CreateItem, ITEM_NAME_MAX_CHARS, ItemName};
 use libfuzzer_sys::fuzz_target;
 
 fuzz_target!(|data: &[u8]| {

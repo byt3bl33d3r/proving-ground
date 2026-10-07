@@ -4,7 +4,7 @@ title: Fuzzing
 description: Fuzz targets, corpora and the crash workflow: reproduce, minimize, add a regression test, fix.
 tags: [hardening, fuzzing, cargo-fuzz, libfuzzer]
 status: stable
-code_refs: [harness/fuzz/Cargo.toml]
+code_refs: [harness/fuzz/Cargo.toml, harness/fuzz/corpus]
 ---
 
 # Fuzzing

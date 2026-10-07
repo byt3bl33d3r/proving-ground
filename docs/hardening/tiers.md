@@ -11,7 +11,7 @@ code_refs: [justfile]
 
 | Tier | Recipe | Runs on | Adds | Gate |
 | --- | --- | --- | --- | --- |
-| 0 | `just check` | pre-commit (plus affected tests and the panic audit); the agent Stop hook runs the lint steps | fmt, clippy `-D warnings` in every workspace, nextest, machete, `just knowledge` | hard |
+| 0 | `just check` | pre-commit (plus affected tests and the panic audit); the agent Stop hook runs the lint steps | fmt, clippy `-D warnings` in every workspace, nextest, machete, `just knowledge`, `just lint-recipes` (shellcheck on the justfile) | hard |
 | 1 | `just ci` | every PR; pre-push runs `just ci-fast` | `hk check --all`, cargo-deny, dylint, coverage gate, panic audit, asm snapshots, Gungraun, Miri, Kani quick, DST 200 seeds | hard |
 | 2 | `just perf` | manual | optimization remarks, llvm-mca, Criterion, llvm-lines, build timings | informational |
 | 3 | `just harden` | nightly | fuzzing, ASan, TSan, Kani full, DST 100k seeds, cargo-mutants | hard, opens an issue |

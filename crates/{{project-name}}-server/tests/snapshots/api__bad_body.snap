@@ -1,0 +1,11 @@
+---
+source: crates/{{project-name}}-server/tests/api.rs
+expression: "&json"
+---
+{
+  "error": {
+    "code": "invalid_body",
+    "message": "Failed to deserialize the JSON body into the target type: nom: unknown field `nom`, expected `name` at line 1 column 6",
+    "request_id": "[request_id]"
+  }
+}

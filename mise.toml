@@ -2,6 +2,11 @@
 # The Rust toolchain itself is pinned in rust-toolchain.toml (stable) and NIGHTLY below.
 # Protected: COV_MIN_REGIONS (ask before lowering; `just cov-ratchet` raises it).
 
+[hooks]
+# Install the pinned toolchain (rust-toolchain.toml) once, before any cargo-built tool: parallel
+# `cargo install`s would otherwise each trigger rustup and race on the same components.
+preinstall = "rustup toolchain install"
+
 [tools]
 # Task runner, git hooks, JSON
 just = "1.58.0"
@@ -14,6 +19,7 @@ taplo = "0.10.0"
 typos = "1.51.1"
 gitleaks = "8.30.1"
 actionlint = "1.7.12"
+"aqua:koalaman/shellcheck" = "0.11.0"
 
 # Local CI
 act = "0.2.89"
@@ -24,7 +30,7 @@ act = "0.2.89"
 "aqua:nextest-rs/nextest/cargo-nextest" = "0.9.146"
 "aqua:taiki-e/cargo-llvm-cov" = "0.9.1"
 "aqua:EmbarkStudios/cargo-deny" = "0.20.2"
-"aqua:mitsuhiko/insta" = "1.49.0"
+"cargo:cargo-insta" = "1.49.0"
 "github:bnjbvr/cargo-machete" = "0.9.2"
 "github:cargo-generate/cargo-generate" = "0.25.0"
 sccache = "0.18.0"
@@ -54,6 +60,9 @@ OTEL_SERVICE_NAME = "demo-app"
 # The only nightly analysis recipes use (`cargo +$NIGHTLY ...`); nothing else uses nightly.
 NIGHTLY = "nightly-2026-10-07"
 # Coverage gate (region %). Protected: never lower it; `just cov-ratchet` raises it.
-COV_MIN_REGIONS = "70.4"
+COV_MIN_REGIONS = "71.2"
 # Share compiled dependencies between worktrees (each worktree keeps its own target/).
 RUSTC_WRAPPER = "sccache"
+# Template repository only (mise.toml.liquid leaves it out): git and agent hooks use
+# template.hk.pkl here, because hk.pkl's Rust steps cannot run on unrendered placeholders.
+HK_FILE = "{{config_root}}/template.hk.pkl"

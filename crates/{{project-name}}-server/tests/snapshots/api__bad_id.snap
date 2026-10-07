@@ -1,0 +1,11 @@
+---
+source: crates/{{project-name}}-server/tests/api.rs
+expression: "&json"
+---
+{
+  "error": {
+    "code": "validation_error",
+    "message": "invalid input: item id must start with \"itm_\"",
+    "request_id": "[request_id]"
+  }
+}

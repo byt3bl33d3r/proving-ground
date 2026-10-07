@@ -4,7 +4,7 @@ title: Telemetry fields and naming
 description: Telemetry naming rules: OpenTelemetry semantic-convention names, snake_case domain fields, verb_noun span names, constant messages.
 tags: [observability, fields, naming, tracing, lint]
 status: stable
-code_refs: [crates/demo-app-core/src/fields.rs, harness/lints/src/field_style.rs]
+code_refs: [crates/{{project-name}}-core/src/fields.rs, harness/lints/src/field_style.rs]
 ---
 
 # Telemetry fields and naming

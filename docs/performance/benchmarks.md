@@ -4,7 +4,7 @@ title: Benchmarks
 description: Instruction-count (Gungraun) and wall-clock (Criterion) benchmarks: which one gates and how baselines work.
 tags: [performance, benchmarks, gungraun, criterion]
 status: stable
-code_refs: [crates/demo-app-core/benches/instructions.rs, crates/demo-app-core/benches/wall_clock.rs]
+code_refs: [crates/{{project-name}}-core/benches/instructions.rs, crates/{{project-name}}-core/benches/wall_clock.rs]
 ---
 
 # Benchmarks

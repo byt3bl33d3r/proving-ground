@@ -1,0 +1,16 @@
+# {{project-name}}
+
+{{description}}.
+
+A Rust workspace (core and runtime libraries, an axum server, a clap CLI) with a full agent
+harness: per-worktree telemetry stack, deterministic simulation, fuzzing, proofs, and git hooks.
+
+```bash
+mise trust && mise install
+just bootstrap
+just up        # stack + server; prints URLs as JSON
+just check     # tier 0
+```
+
+Start with [AGENTS.md](AGENTS.md) (the map) and [docs/index.md](docs/index.md) (the knowledge
+bundle). `just --list` shows every task.

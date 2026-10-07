@@ -4,7 +4,7 @@ title: Kani proofs
 description: Kani proof harnesses in core: the quick tier, the full tier, and why string-heavy proofs run nightly.
 tags: [hardening, kani, proofs, formal-verification]
 status: stable
-code_refs: [crates/demo-app-core/src/proofs.rs]
+code_refs: [crates/{{project-name}}-core/src/proofs.rs]
 ---
 
 # Kani proofs

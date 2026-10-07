@@ -1,0 +1,32 @@
+// Git hooks for the template repository only (cargo-generate ignores this file).
+// The template repo's mise.toml sets HK_FILE to this file, so the installed hooks (which run
+// `mise x -- hk ...`) and the agent Stop hooks use it instead of hk.pkl. hk.pkl's Rust steps
+// cannot run here: crate names are {{placeholders}} until cargo-generate renders them. They are
+// skipped; the steps below work on the unrendered files. `just template-ci` tests the generated
+// project, including hk.pkl.
+amends "package://github.com/jdx/hk/releases/download/v2.5.0/hk@2.5.0#/Config.pkl"
+import "package://github.com/jdx/hk/releases/download/v2.5.0/hk@2.5.0#/Builtins.pkl"
+
+local lint = new Mapping<String, Step> {
+  ["actionlint"] = Builtins.actionlint
+  ["just-recipes"] {
+    glob = List("justfile", "template.just")
+    check = new CommandSpec { command = "just lint-recipes"; effect = "read" }
+  }
+  ["knowledge"] {
+    check = new CommandSpec { command = "just knowledge"; effect = "read" }
+  }
+}
+
+hooks {
+  ["pre-commit"] {
+    steps = (lint) {
+      ["secrets"] = (Builtins.gitleaks) { scan = "staged" }
+    }
+  }
+  ["pre-push"] {
+    steps = lint
+  }
+  ["check"] { steps = lint }
+  ["fix"] { steps = lint }
+}

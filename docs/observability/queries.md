@@ -18,10 +18,10 @@ backend's `field_names` endpoint; they are listed in [fields](/observability/fie
 
 ```text
 # Errors in the last 15 minutes for this service
-_time:15m service.name:="demo-app" severity_text:=ERROR
+_time:15m service.name:="{{service_name}}" severity_text:=ERROR
 
 # Same, summarized by message instead of rows
-_time:15m service.name:="demo-app" severity_text:in(ERROR,WARN) | stats by (severity_text, _msg) count() hits | sort by (hits desc) | limit 20
+_time:15m service.name:="{{service_name}}" severity_text:in(ERROR,WARN) | stats by (severity_text, _msg) count() hits | sort by (hits desc) | limit 20
 
 # Everything one request logged (request_id from an error body)
 _time:1h request_id:="<request_id>"
@@ -39,7 +39,7 @@ such as `item_id` and `error.type`.
 
 ```text
 # Startup span over the 800 ms budget (duration is in nanoseconds; units convert)
-"resource_attr:service.name":="demo-app" name:="startup" duration:>800ms
+"resource_attr:service.name":="{{service_name}}" name:="startup" duration:>800ms
 
 # Slowest requests in the last 15 minutes
 _time:15m name:="http_request" | sort by (duration desc) | limit 10 | fields trace_id, span_attr:http.route, duration
@@ -56,7 +56,7 @@ Use `name:="x"` (exact) rather than `name:"x"` (substring). Span attributes are
 
 ```text
 # p95 latency by route
-histogram_quantile(0.95, sum by (le, http_route) (rate(http_server_request_duration_seconds_bucket{service_name="demo-app"}[5m])))
+histogram_quantile(0.95, sum by (le, http_route) (rate(http_server_request_duration_seconds_bucket{service_name="{{service_name}}"}[5m])))
 
 # Request rate by route and status
 sum by (http_route, http_response_status_code) (rate(http_server_request_duration_seconds_count[5m]))

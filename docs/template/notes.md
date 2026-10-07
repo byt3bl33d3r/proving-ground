@@ -9,7 +9,7 @@ code_refs: [mise.toml]
 
 # Template notes: deviations and verified values
 
-Generated from the rust-project-template at v1.0.0.
+Generated from the {{template_repo}} at {{template_version}}.
 
 ## Deviations from the spec
 
@@ -39,7 +39,7 @@ Generated from the rust-project-template at v1.0.0.
   entries to `.git/config` instead of `.git/hooks/pre-commit`. The "hooks installed" guard checks
   `git hook list pre-commit` (and falls back to the legacy file for older Git).
 - **hk builtins:** there is no `gitleaks_staged`; pre-commit uses `(Builtins.gitleaks) { scan = "staged" }`.
-  The `check`/`fix` hooks call `just secrets {{files}}` because `gitleaks dir` scans a single path.
+  The `check`/`fix` hooks call `just secrets {% raw %}{{files}}{% endraw %}` because `gitleaks dir` scans a single path.
   `Builtins.taplo` only lints, so the step uses `Builtins.taplo_format` (`.taplo.toml` keeps the
   layout). Every custom step is a `CommandSpec` with an `effect`, which `hk run check --safe`
   (the agent Stop hook) requires.
@@ -70,7 +70,17 @@ Generated from the rust-project-template at v1.0.0.
   deprecated): active plans are `status: draft` with tag `active`, finished ones `status: stable`
   with tag `completed`. There is no `trust` field: trust comes from `verified` entries, which only
   humans add. Shipped concepts carry no `stale_after` (a fixed date would expire in every
-  generated project). `docs/generated/` stays: okf ignores non-Markdown files.
+  generated project). `docs/generated/` stays: okf ignores non-Markdown files. okf checks only
+  `.md` links to concepts (a gate under `--strict`) and `code_refs` paths (a `--drift` warning,
+  which `just knowledge` fails on); it never sees paths in inline code or links to non-`.md`
+  files. So concepts link other concepts with Markdown links and list the repo paths they govern
+  in `code_refs`. `okf agents lint` (AAG rules) is not run: its default 400-token budget is far
+  below the roughly 100-line map SPEC asks for, and the architecture test already enforces the
+  120-line limit and that every path in AGENTS.md exists.
+- **Agents start tools through `mise x --`.** The MCP servers (`mise x -- just mcp ...`,
+  `mise x -- okf mcp docs`, `mise x -- hk mcp`) and the Stop and WorktreeRemove hooks run through
+  mise, as the git hooks do, so desktop agent apps that do not load the shell profile only need
+  `mise` on their PATH, not mise activation or shims. SPEC lists `okf` as the bare command.
 - **Agents:** Claude's Stop hook is hk's generated snippet; a `WorktreeRemove` hook runs
   `just down` in the worktree before removing it (replacing workz's `pre_done`). Codex reads
   `.codex/config.toml` and `.codex/hooks.json` only for trusted projects, and asks to trust each
@@ -88,7 +98,48 @@ Generated from the rust-project-template at v1.0.0.
   minimized corpora (`cargo fuzz cmin`).
 - **cargo-mutants** exit code 3 (some mutants timed out) counts as a pass: a timeout means the
   tests caught the mutant.
+- **cargo-generate (0.25.0):** placeholder defaults are not rendered, so `pre.rhai` replaces the
+  literal `service_name` default with the project name; `template_version` and `template_repo`
+  are set by `init.rhai` (there is no template metadata field, and a placeholder without a prompt
+  is an error); `post.rhai` deletes the leftover empty `template-hooks/` directory. `ignore` takes
+  literal paths only. `mise.toml` and `README.md` come from `.liquid` twins, because mise renders
+  its own double-brace templates and so cannot read a file with Liquid placeholders. The floor is
+  `cargo_generate_version = ">=0.25.0"` (the version tested).
+- Generated projects get a short `README.md`; `CODEOWNERS` names `@<gh_owner>/maintainers`.
+  Template-only recipes live in `template.just`, imported optionally by the `justfile` and
+  dropped on generation.
+- The `template-ci` leftover check cannot catch {% raw %}`${{ x }}`{% endraw %} collapsing to `$` (it leaves
+  nothing to grep), so workflows are excluded from Liquid entirely and templated files avoid
+  double-brace escapes.
+- **Coverage baseline** is measured on a clean checkout (`just coverage` now runs
+  `cargo llvm-cov clean` first): an earlier 71.0% reading included stale profiles; a fresh
+  generated project measured 67.7%. Unit tests for the CLI's error mapping and text output brought
+  it to 71.7%, so `COV_MIN_REGIONS` is 71.2.
+- **Fresh-machine installs (found in a clean Linux container):** `aqua:mitsuhiko/insta` has no
+  linux/arm64 binary, so cargo-insta comes from the `cargo:` backend; and parallel `cargo install`s
+  each triggered rustup to install the pinned toolchain and raced on its components, so
+  `mise.toml` has `[hooks] preinstall = "rustup toolchain install"` (a no-op once installed).
+- **Offline cargo-deny** (`just deny-offline`, a pre-commit step) runs `cargo fetch --locked`
+  first: `cargo metadata --offline` needs every platform's crates (for example `windows-sys`),
+  and a Linux build only downloads the host's.
+- **Gungraun in containers:** Valgrind runs under `setarch -R` (ASLR off, for reproducible
+  counts), which Docker's default seccomp profile blocks (`failed to set personality`). GitHub's
+  Ubuntu runners are VMs and allow it; inside Docker use `--security-opt seccomp=unconfined`.
+- `just bootstrap` only warns when Docker is missing: it is needed for `just up` and `just e2e`,
+  not for building, hooks or the CI tiers.
 - `just check` skips the "hooks installed" guard when `CI=true` (CI runners never run `hk install`).
+- **Justfile lint (added at the maintainer's request; SPEC says no shell lint).** Recipe bodies are
+  bash, so `just lint-recipes` checks `just --fmt` layout and runs shellcheck (pinned in
+  `mise.toml`) on every recipe body taken from `just --dump --dump-format json`. Interpolations
+  become `${JUST_EXPR}`, and warnings and errors fail while notes do not: an unquoted interpolation
+  of a variadic parameter is word-split on purpose. It runs in `just check` and as the hk `just-recipes` step.
+- **The hk `knowledge` step has no glob** (SPEC: `docs/**`): concepts list governed code in
+  `code_refs`, so moving or deleting a file outside docs/ can break the bundle. It takes well
+  under a second.
+- **Template repository hooks.** cargo-generate's placeholders make hk.pkl's Rust steps fail in
+  the template repository itself, so its `mise.toml` (not `mise.toml.liquid`) sets
+  `HK_FILE=template.hk.pkl`: secrets, actionlint, the justfile lint and `just knowledge` run there,
+  and the Rust steps are skipped. hk.pkl is exercised by `just template-ci`.
 
 ## Verified values
 

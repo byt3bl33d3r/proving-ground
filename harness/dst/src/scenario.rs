@@ -4,9 +4,9 @@ use std::collections::BTreeMap;
 use std::sync::{Arc, Mutex, PoisonError};
 use std::time::Duration;
 
-use demo_app_core::platform::{Clock as _, SeededRng, TokioClock, buggify};
-use demo_app_core::types::Timestamp;
-use demo_app_server::{AppState, router};
+use {{crate_name}}_core::platform::{Clock as _, SeededRng, TokioClock, buggify};
+use {{crate_name}}_core::types::Timestamp;
+use {{crate_name}}_server::{AppState, router};
 use hyper::StatusCode;
 use serde_json::json;
 

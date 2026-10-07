@@ -5,9 +5,9 @@
 
 use std::path::PathBuf;
 
-use demo_app_cli::client::{Client, ClientError};
-use demo_app_cli::harness::AppInfo;
-use demo_app_core::types::ItemId;
+use {{crate_name}}_cli::client::{Client, ClientError};
+use {{crate_name}}_cli::harness::AppInfo;
+use {{crate_name}}_core::types::ItemId;
 
 fn client() -> Client {
     let dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../.harness");

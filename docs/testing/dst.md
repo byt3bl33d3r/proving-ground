@@ -4,7 +4,7 @@ title: Deterministic simulation testing
 description: Deterministic simulation testing with turmoil, mad-turmoil and buggify: topology, faults, oracle, seeds and reproduction.
 tags: [testing, dst, simulation, turmoil, buggify, seeds]
 status: stable
-code_refs: [harness/dst/src/scenario.rs, crates/demo-app-core/src/platform/buggify.rs]
+code_refs: [harness/dst, harness/dst/src/scenario.rs, crates/{{project-name}}-core/src/platform/buggify.rs]
 ---
 
 # Deterministic simulation testing
@@ -29,3 +29,5 @@ so it is only ever a dependency there.
 - **Self-check:** `dst_is_deterministic` runs one seed in two fresh processes and compares the
   normalized log hashes. If it fails, a nondeterminism source leaked past
   [core::platform](/testing/determinism.md); fix that first.
+
+The other test kinds are in the [test strategy](/testing/strategy.md).

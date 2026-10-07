@@ -6,7 +6,7 @@ description: Reproduce, observe, fix and verify a bug or behaviour change in thi
 # Reproduce, observe, fix, verify
 
 1. **Reproduce.** `just up` (prints the app URL). Trigger the behaviour with the CLI
-   (`cargo run -p demo-app-cli -- items ...`) or a failing test. Error bodies carry a `request_id`.
+   (`cargo run -p {{project-name}}-cli -- items ...`) or a failing test. Error bodies carry a `request_id`.
 2. **Observe** (aggregate, never dump):
    - `just logs-errors`: recent WARN/ERROR from the local JSON log.
    - `just logs-request <request_id>`: everything one request logged.

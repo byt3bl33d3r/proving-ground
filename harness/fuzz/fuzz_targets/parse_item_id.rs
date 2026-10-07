@@ -1,7 +1,7 @@
 //! `ItemId::parse` never panics, and every id it accepts round-trips through `Display`.
 #![no_main]
 
-use demo_app_core::types::ItemId;
+use {{crate_name}}_core::types::ItemId;
 use libfuzzer_sys::fuzz_target;
 
 fuzz_target!(|data: &[u8]| {

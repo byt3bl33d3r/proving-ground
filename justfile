@@ -5,11 +5,11 @@
 # template placeholders. The project name comes from PROJECT_NAME in mise.toml.
 
 set shell := ["bash", "-euo", "pipefail", "-c"]
-set dotenv-path := ".env.local"   # optional per-worktree overrides (HARNESS_PORT); never committed
-set dotenv-override               # .env.local beats inherited values
-set quiet                         # no command echo; stdio MCP servers need a clean stdout
+set dotenv-path := ".env.local" # optional per-worktree overrides (HARNESS_PORT); never committed
+set dotenv-override # .env.local beats inherited values
+set quiet # no command echo; stdio MCP servers need a clean stdout
 
-root    := justfile_directory()
+root := justfile_directory()
 # PROJECT_NAME comes from mise.toml [env]; read the file directly when mise is not active
 # (MCP clients and git hooks may start `just` without it).
 project := env("PROJECT_NAME", shell('sed -n "s/^PROJECT_NAME *= *\"\\(.*\\)\"$/\\1/p" "$1/mise.toml"', root))
@@ -20,22 +20,25 @@ service := env("OTEL_SERVICE_NAME", project)
 # worktree, agent and MCP config computes the same ports with no registry. Override a
 # collision with HARNESS_PORT=<base> in .env.local. See docs/architecture/port-allocation.md.
 path_crc := shell('printf %s "$1" | cksum | cut -d" " -f1', root)
-wt       := shell('basename "$1" | tr "[:upper:]" "[:lower:]" | tr -c "a-z0-9\n" "-"', root) + "-" + shell('printf %06x $(($1 % 16777216))', path_crc)
-base     := env("HARNESS_PORT", shell('echo $((20000 + ($1 % 1000) * 10))', path_crc))
+wt := shell('basename "$1" | tr "[:upper:]" "[:lower:]" | tr -c "a-z0-9\n" "-"', root) + "-" + shell('printf %06x $(($1 % 16777216))', path_crc)
+base := env("HARNESS_PORT", shell('echo $((20000 + ($1 % 1000) * 10))', path_crc))
 
 export COMPOSE_PROJECT_NAME := project + "-" + wt
 export VM_PORT := base
 export VL_PORT := shell('echo $(($1 + 1))', base)
 export VT_PORT := shell('echo $(($1 + 2))', base)
 export OTEL_EXPORTER_OTLP_METRICS_ENDPOINT := "http://127.0.0.1:" + VM_PORT + "/opentelemetry/v1/metrics"
-export OTEL_EXPORTER_OTLP_LOGS_ENDPOINT    := "http://127.0.0.1:" + VL_PORT + "/insert/opentelemetry/v1/logs"
-export OTEL_EXPORTER_OTLP_TRACES_ENDPOINT  := "http://127.0.0.1:" + VT_PORT + "/insert/opentelemetry/v1/traces"
+export OTEL_EXPORTER_OTLP_LOGS_ENDPOINT := "http://127.0.0.1:" + VL_PORT + "/insert/opentelemetry/v1/logs"
+export OTEL_EXPORTER_OTLP_TRACES_ENDPOINT := "http://127.0.0.1:" + VT_PORT + "/insert/opentelemetry/v1/traces"
 export OTEL_EXPORTER_OTLP_PROTOCOL := "http/protobuf"
 export OTEL_RESOURCE_ATTRIBUTES := "worktree=" + wt
 export OTEL_METRIC_EXPORT_INTERVAL := "5000"
 export APP_LOG_JSON := root + "/.harness/logs/app.jsonl"
 
 compose := "docker compose -f harness/stack/compose.yaml"
+
+# Template-repository recipes (template-ci, ...); the file is not part of generated projects.
+import? 'template.just'
 
 # Separate Cargo workspaces (harness/dst, harness/fuzz, harness/lints): fmt and clippy run in each.
 workspaces := ". harness/dst harness/fuzz harness/lints"
@@ -49,46 +52,46 @@ default:
 # Run a command as a named check: log to target/harness/<check>.log, write
 # target/harness/<check>.json {check, ok, summary, details_path, repro}, print a one-line verdict.
 # VERBOSE=1 streams the output instead of capturing it.
-[private]
 [positional-arguments]
+[private]
 gate check *cmd:
     #!/usr/bin/env bash
     set -uo pipefail
     check="$1"; shift
-    mkdir -p "{{root}}/target/harness"
+    mkdir -p "{{ root }}/target/harness"
     log="target/harness/$check.log"
     json="target/harness/$check.json"
     repro="$*"
-    rm -f "{{root}}/$json"
+    rm -f "{{ root }}/$json"
     start=$(date +%s)
-    if [ "${VERBOSE:-0}" = 1 ]; then "$@" 2>&1 | tee "{{root}}/$log"; status=${PIPESTATUS[0]}
-    else "$@" >"{{root}}/$log" 2>&1; status=$?; fi
+    if [ "${VERBOSE:-0}" = 1 ]; then "$@" 2>&1 | tee "{{ root }}/$log"; status=${PIPESTATUS[0]}
+    else "$@" >"{{ root }}/$log" 2>&1; status=$?; fi
     secs=$(( $(date +%s) - start ))
     if [ "$status" = 0 ]; then ok=true; summary="passed in ${secs}s"
     else
       ok=false
-      summary=$(grep -E '^(error|FAIL|failed|Error|warning: unused)' "{{root}}/$log" | head -n 1 | cut -c1-200 || true)
+      summary=$(grep -E '^(error|FAIL|failed|Error|warning: unused)' "{{ root }}/$log" | head -n 1 | cut -c1-200 || true)
       [ -n "$summary" ] || summary="exit status $status after ${secs}s"
     fi
     # A check may write its own richer JSON; only fill in what is missing.
-    if jq -e --arg c "$check" '.check == $c and has("ok")' "{{root}}/$json" >/dev/null 2>&1; then
-      jq --argjson ok "$ok" '.ok = (.ok and $ok)' "{{root}}/$json" > "{{root}}/$json.tmp" && mv "{{root}}/$json.tmp" "{{root}}/$json"
+    if jq -e --arg c "$check" '.check == $c and has("ok")' "{{ root }}/$json" >/dev/null 2>&1; then
+      jq --argjson ok "$ok" '.ok = (.ok and $ok)' "{{ root }}/$json" > "{{ root }}/$json.tmp" && mv "{{ root }}/$json.tmp" "{{ root }}/$json"
     else
       jq -n --arg check "$check" --argjson ok "$ok" --arg summary "$summary" \
         --arg details "$log" --arg repro "$repro" \
-        '{check: $check, ok: $ok, summary: $summary, details_path: $details, repro: $repro}' > "{{root}}/$json"
+        '{check: $check, ok: $ok, summary: $summary, details_path: $details, repro: $repro}' > "{{ root }}/$json"
     fi
     if [ "$ok" = true ]; then printf 'ok    %-14s %s\n' "$check" "$summary"
     else
       printf 'FAIL  %-14s %s\n' "$check" "$summary"
-      [ "${VERBOSE:-0}" = 1 ] || tail -n 60 "{{root}}/$log" | sed 's/^/      /'
+      [ "${VERBOSE:-0}" = 1 ] || tail -n 60 "{{ root }}/$log" | sed 's/^/      /'
       printf '      details: %s  repro: %s\n' "$log" "$repro"
     fi
     exit "$status"
 
 # Run several gates, keep going after failures, exit non-zero if any failed.
-[private]
 [positional-arguments]
+[private]
 gates *names:
     #!/usr/bin/env bash
     set -uo pipefail
@@ -104,18 +107,18 @@ gates *names:
 bootstrap:
     #!/usr/bin/env bash
     set -euo pipefail
-    for tool in cargo docker hk jq cargo-nextest; do
-      command -v "$tool" >/dev/null || { echo "Missing $tool. Run: mise install (and install Docker)" >&2; exit 1; }
+    for tool in cargo hk jq cargo-nextest; do
+      command -v "$tool" >/dev/null || { echo "Missing $tool. Run: mise install" >&2; exit 1; }
     done
-    docker info >/dev/null 2>&1 || echo "warning: Docker is not running; just up needs it" >&2
-    [ -f Cargo.lock ] || cargo generate-lockfile
+    docker info >/dev/null 2>&1 || echo "warning: Docker is not available; just up and just e2e need it" >&2
+    for ws in . harness/dst harness/fuzz; do [ -f "$ws/Cargo.lock" ] || (cd "$ws" && cargo generate-lockfile); done
     hk install --mise
     cargo build --workspace --all-targets --locked
     echo '{"bootstrap": "ok", "next": ["just up", "just check"]}'
 
 # Fail fast when the git hooks are not installed (skipped in CI, which runs `hk check --all`)
-[private]
 [no-exit-message]
+[private]
 hooks-installed:
     if [ "${CI:-}" != true ] && ! git hook list pre-commit 2>/dev/null | grep -qx hk-pre-commit \
       && ! grep -qs 'hk run pre-commit' "$(git rev-parse --git-common-dir)/hooks/pre-commit"; then \
@@ -125,23 +128,48 @@ hooks-installed:
 
 # Tier 0: fmt, clippy, tests, machete in every workspace, project memory (also runs on commit)
 check: hooks-installed
-    just gates fmt-check clippy test machete knowledge
+    just gates fmt-check clippy test machete knowledge lint-recipes
 
 # Format every workspace
 fmt:
-    for ws in {{workspaces}}; do [ -f "$ws/Cargo.toml" ] || continue; (cd "$ws" && cargo fmt --all); done
+    for ws in {{ workspaces }}; do [ -f "$ws/Cargo.toml" ] || continue; (cd "$ws" && cargo fmt --all); done
 
 # Check formatting in every workspace
 fmt-check:
-    for ws in {{workspaces}}; do [ -f "$ws/Cargo.toml" ] || continue; (cd "$ws" && cargo fmt --all --check); done
+    for ws in {{ workspaces }}; do [ -f "$ws/Cargo.toml" ] || continue; (cd "$ws" && cargo fmt --all --check); done
 
 # Clippy with -D warnings in every workspace
 clippy:
-    for ws in {{workspaces}}; do [ -f "$ws/Cargo.toml" ] || continue; (cd "$ws" && cargo clippy --workspace --all-targets --all-features --locked -- -D warnings); done
+    for ws in {{ workspaces }}; do [ -f "$ws/Cargo.toml" ] || continue; (cd "$ws" && cargo clippy --workspace --all-targets --all-features --locked -- -D warnings); done
 
 # Unit, property, snapshot, transcript and architecture tests (not e2e)
 test *args:
-    cargo nextest run --workspace --locked --no-tests=warn -E 'not binary(e2e) & not binary(asm)' {{args}}
+    cargo nextest run --workspace --locked --no-tests=warn -E 'not binary(e2e) & not binary(asm)' {{ args }}
+
+# Lint the justfiles: `just --fmt` layout, then shellcheck on every bash recipe body
+lint-recipes:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    fmt_hint="Run: just --unstable --fmt"
+    just --unstable --fmt --check >/dev/null || { echo "justfile is not formatted. $fmt_hint" >&2; exit 1; }
+    if [ -f template.just ]; then
+      just --justfile template.just --working-directory . --unstable --fmt --check >/dev/null \
+        || { echo "template.just is not formatted. Run: just --justfile template.just --working-directory . --unstable --fmt" >&2; exit 1; }
+    fi
+    # One file per recipe body. Interpolations become ${JUST_EXPR}; linewise recipes are checked
+    # as one bash script, so line numbers match the recipe body.
+    out=target/harness/recipes
+    rm -rf "$out" && mkdir -p "$out"
+    dump=$(just --dump --dump-format json)
+    for name in $(jq -r '.recipes | keys[]' <<<"$dump"); do
+      jq -r --arg n "$name" '.recipes[$n] as $r
+        | ($r.body | map(map(if type == "string" then . else "${JUST_EXPR}" end) | join(""))) as $lines
+        | if $r.shebang then (if ($lines[0] | test("bash")) then $lines else [] end)
+          else ($lines | map(sub("^[@-]+"; ""))) end
+        | join("\n")' <<<"$dump" > "$out/$name.sh"
+    done
+    cd "$out" && shellcheck --shell=bash --severity=warning --format=gcc ./*.sh \
+      || { echo "shellcheck found problems in the recipes above (<recipe>.sh:<body line>). Fix the recipe in the justfile." >&2; exit 1; }
 
 # Validate the docs/ OKF bundle: schema, links, drift, staleness. Any warning fails.
 knowledge:
@@ -170,8 +198,8 @@ machete:
 protected-files *files:
     #!/usr/bin/env bash
     set -uo pipefail
-    [ -n "{{files}}" ] || exit 0
-    echo "Protected files changed: {{files}}" >&2
+    [ -n "{{ files }}" ] || exit 0
+    echo "Protected files changed: {{ files }}" >&2
     echo "These hold thresholds, baselines or lint policy (Cargo.toml: [workspace.lints]; mise.toml: COV_MIN_REGIONS)." >&2
     echo "Ask a human before weakening any of them; never lower a threshold or baseline to make a check pass." >&2
     exit 1
@@ -181,7 +209,7 @@ secrets *files:
     #!/usr/bin/env bash
     set -euo pipefail
     tmp=$(mktemp -d); trap 'rm -rf "$tmp"' EXIT
-    for f in {{files}}; do [ -f "$f" ] && mkdir -p "$tmp/$(dirname "$f")" && cp "$f" "$tmp/$f"; done
+    for f in {{ files }}; do [ -f "$f" ] && mkdir -p "$tmp/$(dirname "$f")" && cp "$f" "$tmp/$f"; done
     gitleaks dir --no-banner --redact --log-level warn "$tmp"
 
 # Run the tests of the packages that own the given files (all packages if core or the root manifest changed)
@@ -190,7 +218,7 @@ affected-tests *files:
     set -euo pipefail
     all=false; pkgs=()
     meta=$(cargo metadata --format-version 1 --no-deps --locked)
-    for f in {{files}}; do
+    for f in {{ files }}; do
       case "$f" in Cargo.toml|Cargo.lock|crates/*-core/*) all=true ;; esac
       dir=$(dirname "$f")
       while [ "$dir" != . ] && [ ! -f "$dir/Cargo.toml" ]; do dir=$(dirname "$dir"); done
@@ -206,11 +234,11 @@ panic-audit: nightly
     #!/usr/bin/env bash
     set -uo pipefail
     mkdir -p target/harness
-    crate=$(tr - _ <<<"{{project}}")_core
+    crate=$(tr - _ <<<"{{ project }}")_core
     # --callers-of matches mangled names, hence fragments rather than paths
     regex='panic_bounds_check|panic_fmt|panic_const|panic_nounwind|panic_explicit|begin_panic|9panicking5panic|assert_failed|unwrap_failed|expect_failed|index_len_fail|index_order_fail|slice_error_fail|str_index_overflow_fail'
     RUSTFLAGS="-Zcross-crate-inline-threshold=never" CARGO_TARGET_DIR=target/panic-audit \
-      cargo +"$NIGHTLY" asm --lib -p "{{project}}-core" --llvm -s --json --callers-of "$regex" 1 2>target/harness/panic-audit.log \
+      cargo +"$NIGHTLY" asm --lib -p "{{ project }}-core" --llvm -s --json --callers-of "$regex" 1 2>target/harness/panic-audit.log \
       | jq -r '.[].name' | grep -E "^<?${crate}::| as [^ ]*${crate}::" | sort -u > target/harness/panic-callers.txt
     new=$(grep -v -e '^#' -e '^$' docs/generated/panic-allowlist.txt | sort -u | comm -23 target/harness/panic-callers.txt -)
     count=$(grep -c . <<<"$new" || true)
@@ -233,6 +261,7 @@ coverage:
     #!/usr/bin/env bash
     set -uo pipefail
     mkdir -p target/harness
+    cargo llvm-cov clean --workspace   # stale profiles from earlier runs would inflate the number
     cargo llvm-cov nextest --workspace --locked --no-report -E 'not binary(e2e) & not binary(asm)' || exit $?
     cargo llvm-cov report --json --output-path target/harness/cov.json --show-missing-lines > target/harness/cov-missing.txt
     pct=$(jq '.data[0].totals.regions.percent' target/harness/cov.json)
@@ -260,20 +289,20 @@ asm-snapshots:
 # Install Kani's verifier bundle once (cargo-kani itself comes from mise)
 [private]
 kani-setup:
-    ls "$HOME/.kani" 2>/dev/null | grep -q "kani-$(cargo kani --version 2>/dev/null | awk '{print $NF}')" || cargo kani setup >&2
+    [ -d "$HOME/.kani/kani-$(cargo kani --version 2>/dev/null | awk '{print $NF}')" ] || cargo kani setup >&2
 
 # Kani quick harnesses (quick_*) on core. Every run has a per-harness timeout: CBMC can grow
 # without bound in memory, so a slow harness is a bug to fix, not to wait out.
 kani: kani-setup
-    RUSTC_WRAPPER= cargo kani -p "{{project}}-core" --harness quick_ -Z unstable-options --harness-timeout 2m
+    RUSTC_WRAPPER='' cargo kani -p "{{ project }}-core" --harness quick_ -Z unstable-options --harness-timeout 2m
 
 # Every Kani harness on core, higher unwind bounds (tier 3)
 kani-full: kani-setup
-    RUSTC_WRAPPER= cargo kani -p "{{project}}-core" -Z unstable-options --harness-timeout 15m
+    RUSTC_WRAPPER='' cargo kani -p "{{ project }}-core" -Z unstable-options --harness-timeout 15m
 
 # Miri on core's tests (strict provenance); tests that touch files or the network are ignored
 miri: nightly
-    RUSTC_WRAPPER= MIRIFLAGS=-Zmiri-strict-provenance PROPTEST_CASES=8 cargo +"$NIGHTLY" miri nextest run -p "{{project}}-core" --locked
+    RUSTC_WRAPPER='' MIRIFLAGS=-Zmiri-strict-provenance PROPTEST_CASES=8 cargo +"$NIGHTLY" miri nextest run -p "{{ project }}-core" --locked
 
 # Deterministic simulation (harness/dst). Args: SEED=<n> TEST=<name> SEEDS=<count> START=<first>
 # e.g. `just dst`, `just dst SEEDS=1000`, `just dst SEED=17 TEST=items_survive_faults`
@@ -281,7 +310,7 @@ dst *args:
     #!/usr/bin/env bash
     set -uo pipefail
     filter=()
-    for arg in {{args}}; do
+    for arg in {{ args }}; do
       case "$arg" in
         SEED=*) export DST_SEED="${arg#SEED=}" ;;
         SEEDS=*) export DST_SEEDS="${arg#SEEDS=}" ;;
@@ -296,23 +325,23 @@ dst *args:
 fuzz target secs="60": nightly
     #!/usr/bin/env bash
     set -uo pipefail
-    RUSTC_WRAPPER= cargo +"$NIGHTLY" fuzz run --fuzz-dir harness/fuzz "{{target}}" -- -max_total_time="{{secs}}" -timeout=10 && exit 0
+    RUSTC_WRAPPER='' cargo +"$NIGHTLY" fuzz run --fuzz-dir harness/fuzz "{{ target }}" -- -max_total_time="{{ secs }}" -timeout=10 && exit 0
     status=$?
-    crash=$(ls -t harness/fuzz/artifacts/{{target}}/* 2>/dev/null | head -1)
-    echo "Fuzz crash in {{target}}. Reproduce: just fuzz-repro {{target}} $crash  Minimize: just fuzz-tmin {{target}} $crash  Then save it as a regression test and fix it in the same PR." >&2
+    crash=$(ls -t "harness/fuzz/artifacts/{{ target }}"/* 2>/dev/null | head -1)
+    echo "Fuzz crash in {{ target }}. Reproduce: just fuzz-repro {{ target }} $crash  Minimize: just fuzz-tmin {{ target }} $crash  Then save it as a regression test and fix it in the same PR." >&2
     exit "$status"
 
 # Every fuzz target for FUZZ_SECS seconds each (default 600; tier 3)
 fuzz-all:
-    for target in $(RUSTC_WRAPPER= cargo +"$NIGHTLY" fuzz list --fuzz-dir harness/fuzz); do just fuzz "$target" "${FUZZ_SECS:-600}" || exit 1; done
+    for target in $(RUSTC_WRAPPER='' cargo +"$NIGHTLY" fuzz list --fuzz-dir harness/fuzz); do just fuzz "$target" "${FUZZ_SECS:-600}" || exit 1; done
 
 # Re-run one crashing input
 fuzz-repro target artifact: nightly
-    RUSTC_WRAPPER= cargo +"$NIGHTLY" fuzz run --fuzz-dir harness/fuzz "{{target}}" "{{artifact}}"
+    RUSTC_WRAPPER='' cargo +"$NIGHTLY" fuzz run --fuzz-dir harness/fuzz "{{ target }}" "{{ artifact }}"
 
 # Minimize one crashing input
 fuzz-tmin target artifact: nightly
-    RUSTC_WRAPPER= cargo +"$NIGHTLY" fuzz tmin --fuzz-dir harness/fuzz "{{target}}" "{{artifact}}"
+    RUSTC_WRAPPER='' cargo +"$NIGHTLY" fuzz tmin --fuzz-dir harness/fuzz "{{ target }}" "{{ artifact }}"
 
 # Regenerate docs/generated/ (crate graph, lint-exception ledger) from the source
 docs:
@@ -321,13 +350,13 @@ docs:
 
 # Project lints from harness/lints (dylint, its own nightly); warnings fail
 dylint:
-    RUSTC_WRAPPER= DYLINT_RUSTFLAGS="-D warnings" cargo dylint --all -- --all-targets
+    RUSTC_WRAPPER='' DYLINT_RUSTFLAGS="-D warnings" cargo dylint --all -- --all-targets
 
 # ── Tiers ─────────────────────────────────────────────────────────────────────────────────
 
 # Tier 1: everything CI runs on a pull request
 ci:
-    just gates fmt-check clippy test machete knowledge hk-all deny dylint coverage panic-audit asm-snapshots gungraun miri kani dst
+    just gates fmt-check clippy test machete knowledge lint-recipes hk-all deny dylint coverage panic-audit asm-snapshots gungraun miri kani dst
 
 # Pre-push subset of tier 1 (see hk.pkl)
 ci-fast:
@@ -357,31 +386,31 @@ knowledge-pr base pr="":
     #!/usr/bin/env bash
     set -euo pipefail
     mkdir -p target/harness
-    [ -n "$(git diff --name-only "{{base}}"...HEAD -- docs/)" ] || { echo '{"docs_changed": false}'; exit 0; }
-    if ! git diff "{{base}}"...HEAD -- docs/log.md | grep -qE '^\+\* '; then
+    [ -n "$(git diff --name-only "{{ base }}"...HEAD -- docs/)" ] || { echo '{"docs_changed": false}'; exit 0; }
+    if ! git diff "{{ base }}"...HEAD -- docs/log.md | grep -qE '^\+\* '; then
       echo "docs/ changed without a log.md entry; run okf update or add one" >&2; exit 1
     fi
     body=target/harness/knowledge-comment.md
     {
       echo "### Knowledge changes"
-      git diff --name-only "{{base}}"...HEAD -- 'docs/*.md' | grep -v -e '/index.md$' -e '^docs/log.md$' | while read -r file; do
+      git diff --name-only "{{ base }}"...HEAD -- 'docs/*.md' | grep -v -e '/index.md$' -e '^docs/log.md$' | while read -r file; do
         id=${file#docs/}; id=${id%.md}
         okf show "$id" docs --json 2>/dev/null | jq -r '"- **\(.title)** (`\(.id)`): \(.description)"' || echo "- \`$id\` (removed)"
       done
     } > "$body"
-    if [ -n "{{pr}}" ] && command -v gh >/dev/null; then gh pr comment "{{pr}}" --body-file "$body"; else cat "$body"; fi
+    if [ -n "{{ pr }}" ] && command -v gh >/dev/null; then gh pr comment "{{ pr }}" --body-file "$body"; else cat "$body"; fi
 
 # Open or update one issue for a failed nightly check, with the harness JSON and repro lines
 report-failure name:
     #!/usr/bin/env bash
     set -euo pipefail
-    title="hardening: {{name}} failed"
+    title="hardening: {{ name }} failed"
     body=$(mktemp)
     {
-      echo "Nightly \`just {{name}}\` failed on $(git rev-parse --short HEAD) ($(date -u +%F))."
+      echo "Nightly \`just {{ name }}\` failed on $(git rev-parse --short HEAD) ($(date -u +%F))."
       echo; echo '```json'; jq -s . target/harness/*.json 2>/dev/null || echo '[]'; echo '```'
       grep -rhs 'Reproduce:' target/harness harness/dst/target | sort -u | head -5
-      echo; echo "Rerun: just {{name}}"
+      echo; echo "Rerun: just {{ name }}"
     } > "$body"
     number=$(gh issue list --state open --search "in:title \"$title\"" --json number --jq '.[0].number // empty')
     if [ -n "$number" ]; then gh issue comment "$number" --body-file "$body"; else gh issue create --title "$title" --body-file "$body"; fi
@@ -418,7 +447,7 @@ gardening *flags:
       cargo outdated --workspace --root-deps-only 2>/dev/null | tail -n +1 || echo "cargo outdated failed"
     } > "$report"
     cat "$report"
-    if [[ " {{flags}} " == *" --issue "* ]]; then
+    if [[ " {{ flags }} " == *" --issue "* ]]; then
       number=$(gh issue list --state open --search 'in:title "gardening report"' --json number --jq '.[0].number // empty')
       if [ -n "$number" ]; then gh issue edit "$number" --body-file "$report"; else gh issue create --title "gardening report" --body-file "$report"; fi
     fi
@@ -430,7 +459,7 @@ ci-validate:
 
 # Run one workflow job locally in Docker (act); pass -s GITHUB_TOKEN=... for API steps
 ci-local job *flags:
-    act -j "{{job}}" -P ubuntu-latest=catthehacker/ubuntu:act-latest {{flags}}
+    act -j "{{ job }}" -P ubuntu-latest=catthehacker/ubuntu:act-latest {{ flags }}
 
 # All hk steps on every file (catches commits made with hooks bypassed)
 hk-all:
@@ -454,20 +483,20 @@ gungraun save="" baseline="":
       jq -n '{check: "gungraun", ok: true, summary: "skipped: gungraun needs Valgrind (Linux)", details_path: null, repro: "just gungraun"}' > target/harness/gungraun.json
       echo "skipped: gungraun needs Valgrind (Linux)"; exit 0
     fi
-    export GUNGRAUN_HOME="{{root}}/target/gungraun"
+    export GUNGRAUN_HOME="{{ root }}/target/gungraun"
     args=()
-    [ -n "{{save}}" ] && args+=(--save-baseline="{{save}}")
-    [ -n "{{baseline}}" ] && args+=(--baseline="{{baseline}}")
-    cargo bench --locked -p "{{project}}-core" --bench instructions -- ${args[@]+"${args[@]}"}
+    [ -n "{{ save }}" ] && args+=(--save-baseline="{{ save }}")
+    [ -n "{{ baseline }}" ] && args+=(--baseline="{{ baseline }}")
+    cargo bench --locked -p "{{ project }}-core" --bench instructions -- ${args[@]+"${args[@]}"}
 
 # Save a Gungraun baseline named `base` from another commit (CI: the PR's base)
 gungraun-baseline sha:
     #!/usr/bin/env bash
     set -euo pipefail
     if [ "$(uname -s)" != Linux ] || ! command -v valgrind >/dev/null; then echo "skipped: gungraun needs Valgrind (Linux)"; exit 0; fi
-    dir="{{root}}/target/gungraun-base-src"
-    rm -rf "$dir" && git worktree prune && git worktree add --detach "$dir" "{{sha}}" >&2
-    (cd "$dir" && GUNGRAUN_HOME="{{root}}/target/gungraun" cargo bench -p "{{project}}-core" --bench instructions -- --save-baseline=base) >&2 \
+    dir="{{ root }}/target/gungraun-base-src"
+    rm -rf "$dir" && git worktree prune && git worktree add --detach "$dir" "{{ sha }}" >&2
+    (cd "$dir" && GUNGRAUN_HOME="{{ root }}/target/gungraun" cargo bench -p "{{ project }}-core" --bench instructions -- --save-baseline=base) >&2 \
       || echo "base commit has no instruction benchmarks; comparing against nothing" >&2
     git worktree remove --force "$dir"
 
@@ -483,23 +512,23 @@ asan: nightly
     host=$(just host)
     if [ "$host" = x86_64-unknown-linux-gnu ]; then
       rustup target add x86_64-unknown-linux-gnuasan >&2
-      RUSTC_WRAPPER= CARGO_TARGET_DIR=target/asan cargo nextest run --locked --target x86_64-unknown-linux-gnuasan -p "{{project}}-core" -p "{{project}}-server"
+      RUSTC_WRAPPER='' CARGO_TARGET_DIR=target/asan cargo nextest run --locked --target x86_64-unknown-linux-gnuasan -p "{{ project }}-core" -p "{{ project }}-server"
     else
-      RUSTC_WRAPPER= CARGO_TARGET_DIR=target/asan RUSTFLAGS=-Zsanitizer=address \
-        cargo +"$NIGHTLY" nextest run --locked --target "$host" -p "{{project}}-core" -p "{{project}}-server"
+      RUSTC_WRAPPER='' CARGO_TARGET_DIR=target/asan RUSTFLAGS=-Zsanitizer=address \
+        cargo +"$NIGHTLY" nextest run --locked --target "$host" -p "{{ project }}-core" -p "{{ project }}-server"
     fi
 
 # ThreadSanitizer on core and server tests (nightly, rebuilds std)
 tsan: nightly
-    RUSTC_WRAPPER= CARGO_TARGET_DIR=target/tsan RUSTFLAGS=-Zsanitizer=thread \
-      cargo +"$NIGHTLY" nextest run --locked -Zbuild-std --target "$(just host)" -p "{{project}}-core" -p "{{project}}-server"
+    RUSTC_WRAPPER='' CARGO_TARGET_DIR=target/tsan RUSTFLAGS=-Zsanitizer=thread \
+      cargo +"$NIGHTLY" nextest run --locked -Zbuild-std --target "$(just host)" -p "{{ project }}-core" -p "{{ project }}-server"
 
 # Mutation testing on core; surviving mutants are listed in target/harness/mutants.json
 mutants:
     #!/usr/bin/env bash
     set -uo pipefail
     mkdir -p target/harness
-    cargo mutants --package "{{project}}-core" --test-tool nextest --output target/harness --no-shuffle >&2; status=$?
+    cargo mutants --package "{{ project }}-core" --test-tool nextest --output target/harness --no-shuffle >&2; status=$?
     jq '{check: "mutants", ok: ([.outcomes[] | select(.summary == "MissedMutant")] | length == 0), survivors: [.outcomes[] | select(.summary == "MissedMutant") | .scenario.Mutant | "\(.file):\(.span.start.line) \(.name // .function.function_name // "")"], summary: "\([.outcomes[] | select(.summary == "MissedMutant")] | length) surviving mutant(s)", details_path: "target/harness/mutants.out", repro: "just mutants"}' \
       target/harness/mutants.out/outcomes.json > target/harness/mutants.json
     [ "$status" = 3 ] && status=0   # 3 = some mutants timed out, which means the tests caught them
@@ -515,7 +544,7 @@ public-api: nightly
     [ -n "$base" ] || { echo "No tag to diff against; set BASE=<ref>" >&2; exit 1; }
     deny=(--deny=removed --deny=changed); [ "${ALLOW_BREAKING:-0}" = 1 ] && deny=()
     for crate in core runtime server cli; do
-      cargo +"$NIGHTLY" public-api -p "{{project}}-$crate" diff ${deny[@]+"${deny[@]}"} "$base..HEAD" | tee "target/harness/public-api/$crate.txt"
+      cargo +"$NIGHTLY" public-api -p "{{ project }}-$crate" diff ${deny[@]+"${deny[@]}"} "$base..HEAD" | tee "target/harness/public-api/$crate.txt"
     done
 
 # Optimization remarks (inlining, vectorization) for core, one JSON object per remark
@@ -523,9 +552,9 @@ remarks: nightly
     #!/usr/bin/env bash
     set -euo pipefail
     rm -rf target/harness/remarks && mkdir -p target/harness/remarks
-    cargo +"$NIGHTLY" clean -q --release -p "{{project}}-core" --target-dir target/remarks   # remarks are emitted only when core compiles
-    RUSTC_WRAPPER= CARGO_TARGET_DIR=target/remarks RUSTFLAGS="-Cremark=loop-vectorize -Cremark=inline -Zremark-dir=$PWD/target/harness/remarks -Cdebuginfo=1" \
-      cargo +"$NIGHTLY" build --locked --release -p "{{project}}-core" >&2
+    cargo +"$NIGHTLY" clean -q --release -p "{{ project }}-core" --target-dir target/remarks   # remarks are emitted only when core compiles
+    RUSTC_WRAPPER='' CARGO_TARGET_DIR=target/remarks RUSTFLAGS="-Cremark=loop-vectorize -Cremark=inline -Zremark-dir=$PWD/target/harness/remarks -Cdebuginfo=1" \
+      cargo +"$NIGHTLY" build --locked --release -p "{{ project }}-core" >&2
     cat target/harness/remarks/*.yaml 2>/dev/null | awk -v root="^(crates/|$PWD/crates/)" '
       /^--- !/ { if (file ~ root) printf "{\"file\":\"%s\",\"line\":%d,\"pass\":\"%s\",\"name\":\"%s\",\"function\":\"%s\"}\n", file, line, pass, name, fn; file=""; line=0 }
       /^Pass:/ { pass=$2 } /^Name:/ { name=$2 } /^Function:/ { fn=$2 }
@@ -543,20 +572,26 @@ mca:
     for dir in /opt/homebrew/opt/llvm/bin /usr/local/opt/llvm/bin /usr/lib/llvm-*/bin; do [ -x "$dir/llvm-mca" ] && PATH="$PATH:$dir"; done
     command -v llvm-mca >/dev/null || { echo "skipped: llvm-mca not found (it ships with LLVM, not rustup)"; exit 0; }
     awk '/^```text hot-paths/{f=1; next} /^```/{f=0} f && NF' docs/performance/hot-paths.md | while IFS= read -r fn; do
-      cargo asm --lib -p "{{project}}-core" --mca "$fn" > "target/harness/mca/$(tr -c 'A-Za-z0-9\n' _ <<<"$fn").txt" 2>&1
+      cargo asm --lib -p "{{ project }}-core" --mca "$fn" > "target/harness/mca/$(tr -c 'A-Za-z0-9\n' _ <<<"$fn").txt" 2>&1
     done
 
 # Wall-clock benchmarks (Criterion; informational)
 criterion:
-    cargo bench --locked -p "{{project}}-core" --bench wall_clock -- --noplot
+    cargo bench --locked -p "{{ project }}-core" --bench wall_clock -- --noplot
 
 # Top 30 functions by generated LLVM IR lines in core (compile-time signal)
 llvm-lines:
-    cargo llvm-lines --release -p "{{project}}-core" | head -n 32 | tee target/harness/llvm-lines.txt
+    cargo llvm-lines --release -p "{{ project }}-core" | head -n 32 | tee target/harness/llvm-lines.txt
 
 # Build timings report (target/cargo-timings/cargo-timing.html)
 timings:
-    cargo build --locked --release --timings -p "{{project}}-server"
+    cargo build --locked --release --timings -p "{{ project }}-server"
+
+# cargo-deny bans, licenses and sources without the advisory database (pre-commit step). Fetches
+# first: offline metadata needs every platform's crates, and builds only download the host's.
+deny-offline:
+    cargo fetch --locked -q
+    cargo deny --offline check bans licenses sources
 
 # All cargo-deny checks (advisories need the network)
 deny:
@@ -571,7 +606,7 @@ env:
 # Start this worktree's telemetry stack and server; prints URLs as JSON
 up: hooks-installed check-ports
     mkdir -p .harness/logs
-    {{compose}} up -d --quiet-pull >&2
+    {{ compose }} up -d --quiet-pull >&2
     just wait-stack
     just stack-json > .harness/stack.json
     just env > .harness/env
@@ -583,7 +618,7 @@ up: hooks-installed check-ports
 # Stop the server and remove the stack, its volumes and .harness/
 down:
     just stop-server
-    {{compose}} down -v --remove-orphans >&2 2>/dev/null || true
+    {{ compose }} down -v --remove-orphans >&2 2>/dev/null || true
     rm -rf .harness
 
 # Rebuild and restart only the server (keeps the stack and its data)
@@ -602,8 +637,8 @@ status:
     alive=false; [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null && alive=true
     url=$(jq -r .url .harness/app.json 2>/dev/null || echo "")
     ready=false; [ -n "$url" ] && curl -fsS -m 2 "$url/readyz" >/dev/null 2>&1 && ready=true
-    jq -n --arg wt "{{wt}}" --argjson base {{base}} --arg url "$url" --arg pid "$pid" \
-      --argjson vm "$(health $VM_PORT)" --argjson vl "$(health $VL_PORT)" --argjson vt "$(health $VT_PORT)" \
+    jq -n --arg wt "{{ wt }}" --argjson base "{{ base }}" --arg url "$url" --arg pid "$pid" \
+      --argjson vm "$(health "$VM_PORT")" --argjson vl "$(health "$VL_PORT")" --argjson vt "$(health "$VT_PORT")" \
       --argjson alive "$alive" --argjson ready "$ready" \
       '{worktree: $wt, ports: {range: [$base, $base + 9], metrics: $base, logs: ($base + 1), traces: ($base + 2)},
         stack: {victoria_metrics: $vm, victoria_logs: $vl, victoria_traces: $vt},
@@ -631,7 +666,7 @@ ui:
 harness-gc:
     #!/usr/bin/env bash
     set -euo pipefail
-    docker compose ls --all --format json | jq -r --arg p "{{project}}-" \
+    docker compose ls --all --format json | jq -r --arg p "{{ project }}-" \
       '.[] | select(.Name | startswith($p)) | "\(.Name)\t\(.ConfigFiles)"' |
     while IFS=$'\t' read -r name files; do
       if [ ! -e "${files%%,*}" ]; then
@@ -654,7 +689,7 @@ worktree-remove:
 mcp kind:
     #!/usr/bin/env bash
     set -euo pipefail
-    case "{{kind}}" in
+    case "{{ kind }}" in
       metrics) MCP_LOG_LEVEL=warn VM_INSTANCE_ENTRYPOINT="http://127.0.0.1:$VM_PORT" VM_INSTANCE_TYPE=single exec mcp-victoriametrics ;;
       logs)    MCP_LOG_LEVEL=warn VL_INSTANCE_ENTRYPOINT="http://127.0.0.1:$VL_PORT" exec mcp-victorialogs ;;
       traces)  MCP_LOG_LEVEL=warn VT_INSTANCE_ENTRYPOINT="http://127.0.0.1:$VT_PORT" exec mcp-victoriatraces ;;
@@ -662,12 +697,12 @@ mcp kind:
     esac
 
 # Fail if this worktree's ports are taken by something other than its own stack
-[private]
 [no-exit-message]
+[private]
 check-ports:
     #!/usr/bin/env bash
     set -uo pipefail
-    ours=$({{compose}} ps --format '{{{{.Publishers}}' 2>/dev/null || true)
+    ours=$({{ compose }} ps --format '{{{{.Publishers}}' 2>/dev/null || true)
     for p in $VM_PORT $VL_PORT $VT_PORT; do
       (exec 3<>"/dev/tcp/127.0.0.1/$p") 2>/dev/null || continue
       grep -q ":$p->" <<<"$ours" && continue
@@ -682,13 +717,13 @@ wait-stack:
     set -uo pipefail
     for p in $VM_PORT $VL_PORT $VT_PORT; do
       for _ in $(seq 1 60); do curl -fsS -m 1 "http://127.0.0.1:$p/health" >/dev/null 2>&1 && continue 2; sleep 0.5; done
-      echo "Victoria service on port $p not healthy after 30s. Run: {{compose}} logs" >&2; exit 1
+      echo "Victoria service on port $p not healthy after 30s. Run: {{ compose }} logs" >&2; exit 1
     done
 
 [private]
 stack-json:
     #!/usr/bin/env bash
-    jq -n --argjson base {{base}} --arg wt "{{wt}}" --arg project "$COMPOSE_PROJECT_NAME" \
+    jq -n --argjson base "{{ base }}" --arg wt "{{ wt }}" --arg project "$COMPOSE_PROJECT_NAME" \
       --arg m "$OTEL_EXPORTER_OTLP_METRICS_ENDPOINT" --arg l "$OTEL_EXPORTER_OTLP_LOGS_ENDPOINT" --arg t "$OTEL_EXPORTER_OTLP_TRACES_ENDPOINT" \
       '{worktree: $wt, compose_project: $project,
         ports: {range: [$base, $base + 9], metrics: $base, logs: ($base + 1), traces: ($base + 2)},
@@ -697,9 +732,9 @@ stack-json:
 
 [private]
 start-server:
-    cargo build -q -p "{{project}}-server"
+    cargo build -q -p "{{ project }}-server"
     rm -f .harness/app.json
-    nohup "target/debug/{{project}}-server" > .harness/logs/server.out 2>&1 & echo $! > .harness/server.pid
+    nohup "target/debug/{{ project }}-server" > .harness/logs/server.out 2>&1 & echo $! > .harness/server.pid
 
 [private]
 stop-server:
@@ -710,8 +745,8 @@ stop-server:
     for _ in $(seq 1 50); do kill -0 "$pid" 2>/dev/null || exit 0; sleep 0.2; done
     kill -KILL "$pid" 2>/dev/null || true
 
-[private]
 [no-exit-message]
+[private]
 wait-ready:
     #!/usr/bin/env bash
     set -uo pipefail
@@ -733,23 +768,23 @@ logs-errors:
 
 # Every local log line for one request id (max 200)
 logs-request request_id:
-    jq -c --arg id "{{request_id}}" 'select([.span.request_id?, .spans[]?.request_id] | index($id)) | {ts: .timestamp, level, msg: .fields.message, target, fields: (.fields | del(.message))}' .harness/logs/app.jsonl | head -n 200
+    jq -c --arg id "{{ request_id }}" 'select([.span.request_id?, .spans[]?.request_id] | index($id)) | {ts: .timestamp, level, msg: .fields.message, target, fields: (.fields | del(.message))}' .harness/logs/app.jsonl | head -n 200
 
 # VictoriaLogs LogsQL query, newline JSON, max 200 lines
 q-logs query:
-    curl -fsS "http://127.0.0.1:$VL_PORT/select/logsql/query" --data-urlencode 'query={{query}}' -d limit=200
+    curl -fsS "http://127.0.0.1:$VL_PORT/select/logsql/query" --data-urlencode 'query={{ query }}' -d limit=200
 
 # VictoriaMetrics PromQL/MetricsQL instant query, result vector as JSON
 q-metrics query:
-    curl -fsS "http://127.0.0.1:$VM_PORT/api/v1/query" --data-urlencode 'query={{query}}' | jq -c '.data.result'
+    curl -fsS "http://127.0.0.1:$VM_PORT/api/v1/query" --data-urlencode 'query={{ query }}' | jq -c '.data.result'
 
 # VictoriaTraces span search (LogsQL), newline JSON, max 200 lines
 q-traces query:
-    curl -fsS "http://127.0.0.1:$VT_PORT/select/logsql/query" --data-urlencode 'query={{query}}' -d limit=200
+    curl -fsS "http://127.0.0.1:$VT_PORT/select/logsql/query" --data-urlencode 'query={{ query }}' -d limit=200
 
 # One trace via the Jaeger API, one span per line: name, duration_ms, parent, status
 trace trace_id:
-    curl -fsS "http://127.0.0.1:$VT_PORT/select/jaeger/api/traces/{{trace_id}}" | jq -c '.data[0] as $t | $t.spans | sort_by(.startTime)[] | {name: .operationName, span_id: .spanID, parent: ((.references // []) | map(select(.refType == "CHILD_OF")) | .[0].spanID // null), duration_ms: (.duration / 1000), status: ((.tags | map(select(.key == "error")) | .[0].value) // "unset"), service: $t.processes[.processID].serviceName}' | head -n 500
+    curl -fsS "http://127.0.0.1:$VT_PORT/select/jaeger/api/traces/{{ trace_id }}" | jq -c '.data[0] as $t | $t.spans | sort_by(.startTime)[] | {name: .operationName, span_id: .spanID, parent: ((.references // []) | map(select(.refType == "CHILD_OF")) | .[0].spanID // null), duration_ms: (.duration / 1000), status: ((.tags | map(select(.key == "error")) | .[0].value) // "unset"), service: $t.processes[.processID].serviceName}' | head -n 500
 
 # Run every budget in docs/observability/budgets.md; pass/fail JSON (target/harness/budgets.json)
 budgets:
@@ -761,7 +796,7 @@ budgets:
     awk '/^```jsonl budgets/{f=1; next} /^```/{f=0} f' docs/observability/budgets.md > target/harness/budgets.jsonl
     results=()
     while IFS= read -r budget; do
-      query=$(jq -r .query <<<"$budget" | sed -e "s|\$SERVICE|{{service}}|g" -e "s|\$START|$start|g" -e "s|\$END|$end|g")
+      query=$(jq -r .query <<<"$budget" | sed -e "s|\$SERVICE|{{ service }}|g" -e "s|\$START|$start|g" -e "s|\$END|$end|g")
       value=null
       for _ in $(seq 1 30); do
         case $(jq -r .backend <<<"$budget") in

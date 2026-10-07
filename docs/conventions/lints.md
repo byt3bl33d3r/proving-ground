@@ -4,7 +4,7 @@ title: Lint policy
 description: The lint policy: denied groups, the expect escape hatch, the exception ledger, and the protected files.
 tags: [conventions, lints, clippy, protected-files]
 status: stable
-code_refs: [Cargo.toml, clippy.toml, docs/generated/lint-exceptions.txt]
+code_refs: [Cargo.toml, clippy.toml, deny.toml, .config/nextest.toml, docs/generated/lint-exceptions.txt, docs/generated/panic-allowlist.txt, harness/lints, harness/checks/tests/arch.rs]
 ---
 
 # Lint policy
@@ -16,7 +16,9 @@ code_refs: [Cargo.toml, clippy.toml, docs/generated/lint-exceptions.txt]
 - Every `#[expect]` is listed in `docs/generated/lint-exceptions.txt`; a new one fails the
   architecture test until `just docs` records it in the same PR, so reviewers see it.
 - `clippy.toml` bans with remedies: see [determinism](/testing/determinism.md) and
-  [fields](/observability/fields.md).
+  [fields](/observability/fields.md). Size and complexity limits are in
+  [modules](/conventions/modules.md); the panic and `process::exit` bans pair with
+  [errors and exit codes](/conventions/errors.md).
 
 Protected files (ask a human first, never weaken): `clippy.toml`, `deny.toml`,
 `[workspace.lints]`, `.config/nextest.toml`, `COV_MIN_REGIONS` in mise.toml, the budgets, the

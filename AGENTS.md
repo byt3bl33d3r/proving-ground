@@ -1,12 +1,12 @@
-# demo-app: agent map
+# {{project-name}}: agent map
 
-A Rust service. Rust workspace: core + runtime libraries, axum server, clap CLI.
+{{description}}. Rust workspace: core + runtime libraries, axum server, clap CLI.
 This file is a map, not a manual: details live in docs/ (an OKF knowledge bundle). Keep it short.
 
 ## Commands (run these, not raw cargo)
 | Need | Run |
 | --- | --- |
-| Tier 0: fmt, clippy, tests, machete, docs check (also on commit) | `just check` |
+| Tier 0: fmt, clippy, tests, machete, docs check, justfile lint (also on commit) | `just check` |
 | Tier 1: everything CI runs on a PR (pre-push runs `just ci-fast`) | `just ci` |
 | Per-worktree stack + server; URLs in .harness/app.json | `just up` / `just down` / `just status` |
 | End-to-end tests + latency budgets (needs `just up`) | `just e2e` |
@@ -44,7 +44,7 @@ Ports and stacks per worktree: docs/architecture/port-allocation.md.
 
 ## Where tests go
 - Unit and property tests: `#[cfg(test)]` modules (proptest in core). API: insta snapshots in
-  crates/demo-app-server/tests/api.rs. CLI: trycmd transcripts in crates/demo-app-cli/tests/cmd/.
+  crates/{{project-name}}-server/tests/api.rs. CLI: trycmd transcripts in crates/{{project-name}}-cli/tests/cmd/.
 - Integration test files start with `#![cfg(test)]`; every assert has a message.
 - Async tests use `#[tokio::test(start_paused = true)]` with `TokioClock` and `SeededRng`.
 - New failure modes in the domain: add a `buggify!` site and let `just dst` find the bugs.

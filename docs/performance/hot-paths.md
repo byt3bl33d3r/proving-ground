@@ -4,7 +4,7 @@ title: Hot paths
 description: Functions whose assembly is snapshotted and whose instruction counts are benchmarked, and how to add one.
 tags: [performance, asm, benchmarks]
 status: stable
-code_refs: [crates/demo-app-core/benches/instructions.rs, harness/checks/tests/asm.rs]
+code_refs: [crates/{{project-name}}-core/benches/instructions.rs, harness/checks/tests/asm.rs]
 ---
 
 # Hot paths
@@ -16,8 +16,8 @@ as an insta snapshot by `just asm-snapshots`. An assembly diff fails until someo
 (see [benchmarks](/performance/benchmarks.md)).
 
 ```text hot-paths
-<demo_app_core::types::ItemId>::parse
-<demo_app_core::types::Page>::bounds
+<{{crate_name}}_core::types::ItemId>::parse
+<{{crate_name}}_core::types::Page>::bounds
 ```
 
 To add a hot path: mark the function `#[inline(never)]`, add a line above (the name exactly as

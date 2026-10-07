@@ -1,0 +1,41 @@
+# The template's own test (template repository only; removed on generation): generate a project
+# for every license choice and run the acceptance steps on it (`just template-ci`).
+name: template-ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+  NEXTEST_PROFILE: ci
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+jobs:
+  generate:
+    name: generate (${{ matrix.license }})
+    strategy:
+      fail-fast: false
+      matrix:
+        license: ["MIT OR Apache-2.0", "Apache-2.0", "MIT", "Proprietary"]
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: jdx/mise-action@2d8d4cafcbd33be2ea37d2b6f5ad595363d1f1ca # v5.1.1
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+      - run: just ci-deps
+      - run: just template-ci
+        env:
+          LICENSE: ${{ matrix.license }}
+      - if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: template-ci-${{ strategy.job-index }}
+          path: target/harness/
+          if-no-files-found: ignore

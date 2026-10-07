@@ -1,0 +1,32 @@
+[package]
+name = "{{project-name}}-cli"
+description = "Command-line client: HTTP client, commands and output"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[[bin]]
+name = "{{project-name}}"
+path = "src/main.rs"
+
+[dependencies]
+clap.workspace = true
+{{project-name}}-core.workspace = true
+{{project-name}}-runtime.workspace = true
+opentelemetry.workspace = true
+reqwest.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+tokio = { workspace = true, features = ["rt"] }
+tracing.workspace = true
+tracing-opentelemetry.workspace = true
+
+[dev-dependencies]
+trycmd.workspace = true
+
+[lints]
+workspace = true

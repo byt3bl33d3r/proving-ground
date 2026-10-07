@@ -4,7 +4,7 @@ title: Test strategy
 description: The kinds of tests (unit, property, snapshot, golden logs, transcripts, architecture, e2e, DST) and where each one lives.
 tags: [testing, nextest, insta, proptest, trycmd]
 status: stable
-code_refs: [.config/nextest.toml]
+code_refs: [.config/nextest.toml, crates/{{project-name}}-server/tests/api.rs, crates/{{project-name}}-core/tests/golden_logs.rs, crates/{{project-name}}-cli/tests/cmd, harness/checks/tests/arch.rs, harness/checks/tests/e2e.rs, harness/dst]
 ---
 
 # Test strategy
@@ -23,5 +23,8 @@ code_refs: [.config/nextest.toml]
 Integration test files start with `#![cfg(test)]` (clippy's `tests_outside_test_module`). Every
 assertion carries a message. Time and randomness come from `core::platform`
 ([determinism](/testing/determinism.md)); the simulation is described in [DST](/testing/dst.md).
+There are no browser or UI tests: the template has no UI. The plan for one (Playwright, WebDriver
+or `egui_kittest`, plus before-and-after recordings) is the [Adding a UI](/decisions/adding-a-ui.md)
+decision; [UI evidence](/testing/evidence.md) is the matching how-to.
 When a database is added, integration tests use testcontainers (random ports, automatic cleanup)
 and the DST model gains a storage fault layer behind the `ItemRepo` trait.

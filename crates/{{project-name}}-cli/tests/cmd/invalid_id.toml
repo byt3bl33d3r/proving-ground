@@ -1,0 +1,5 @@
+bin.name = "{{project-name}}"
+env.remove = ["APP_URL", "RUST_LOG", "APP_LOG_JSON"]
+env.add = { APP_HARNESS_DIR = "/nonexistent-harness" }
+args = ["items", "get", "nope"]
+status.code = 1

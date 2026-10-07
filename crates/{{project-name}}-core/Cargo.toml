@@ -1,0 +1,45 @@
+[package]
+name = "{{project-name}}-core"
+description = "Domain types, services, repository and platform seams"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[features]
+# Simulated platform for harness/dst only: fixed-hash maps, turmoil networking, live buggify!.
+# Never enabled inside the main workspace (Cargo would unify it into every build).
+sim = ["dep:turmoil"]
+
+[dependencies]
+fastrand.workspace = true
+opentelemetry.workspace = true
+serde.workspace = true
+thiserror.workspace = true
+tokio = { workspace = true, features = ["net", "time"] }
+tracing.workspace = true
+turmoil = { workspace = true, optional = true }
+
+[dev-dependencies]
+criterion.workspace = true
+gungraun.workspace = true
+insta.workspace = true
+proptest.workspace = true
+serde_json.workspace = true
+tokio = { workspace = true, features = ["macros", "rt", "test-util"] }
+tracing-subscriber.workspace = true
+
+# Instruction counts (Gungraun, Linux + Valgrind): `just gungraun`. Gates on >2% regressions.
+[[bench]]
+name = "instructions"
+harness = false
+
+# Wall clock (Criterion): `just perf`. Informational only.
+[[bench]]
+name = "wall_clock"
+harness = false
+
+[lints]
+workspace = true

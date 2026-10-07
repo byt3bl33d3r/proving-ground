@@ -1,9 +1,0 @@
----
-source: crates/demo-app-server/tests/api.rs
-expression: "&created"
----
-{
-  "created_at_ms": "[timestamp]",
-  "id": "[id]",
-  "name": "pen"
-}

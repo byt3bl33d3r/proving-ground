@@ -7,14 +7,14 @@ resolver = "3"
 version = "0.1.0"
 edition = "2024"
 rust-version = "1.98.1"
-license = "MIT OR Apache-2.0"
-repository = "https://github.com/acme/demo-app"
+license = "{% if license == "Proprietary" %}LicenseRef-Proprietary{% else %}{{license}}{% endif %}"
+repository = "https://github.com/{{gh_owner}}/{{project-name}}"
 publish = false
 
 [workspace.dependencies]
-demo-app-core = { path = "crates/demo-app-core" }
-demo-app-runtime = { path = "crates/demo-app-runtime" }
-demo-app-cli = { path = "crates/demo-app-cli" }
+{{project-name}}-core = { path = "crates/{{project-name}}-core" }
+{{project-name}}-runtime = { path = "crates/{{project-name}}-runtime" }
+{{project-name}}-cli = { path = "crates/{{project-name}}-cli" }
 
 # Async runtime and HTTP
 tokio = { version = "1.53.2", default-features = false }

@@ -1,0 +1,56 @@
+# cargo-generate template config. Generate a project with:
+#   cargo generate --path <this repo> --name <project-name>
+# See TEMPLATE_README.md for the template's own workflow (template-ci, releases, upgrades).
+[template]
+cargo_generate_version = ">=0.25.0"
+# Removed from generated projects (literal paths only; cargo-generate does not glob here)
+ignore = [
+  "TEMPLATE_README.md",
+  "template.just",
+  "template.hk.pkl",
+  "SPEC.md",
+  ".github/workflows/template-ci.yml",
+  "target",
+  ".harness",
+  ".env.local",
+  "Cargo.lock",
+  "harness/dst/Cargo.lock",
+  "harness/fuzz/Cargo.lock",
+]
+# Copied verbatim, never run through Liquid (they use {{ }} natively, or are binary data)
+exclude = [
+  ".github/workflows/*.yml",
+  "justfile",
+  "hk.pkl",
+  "harness/stack/**",
+  "harness/lints/**",
+  "harness/fuzz/corpus/**",
+]
+
+[placeholders.description]
+type = "string"
+prompt = "One-line project description"
+default = "A Rust service"
+
+[placeholders.gh_owner]
+type = "string"
+prompt = "GitHub owner or org (used in Cargo.toml repository URLs)"
+default = "your-org"
+
+[placeholders.license]
+type = "string"
+prompt = "License"
+choices = ["MIT OR Apache-2.0", "Apache-2.0", "MIT", "Proprietary"]
+default = "MIT OR Apache-2.0"
+
+[placeholders.service_name]
+type = "string"
+prompt = "OTEL service.name (defaults to project name)"
+default = "{{project-name}}"
+
+[hooks]
+# init sets values that are never prompted; pre resolves the service_name default; post prints
+# next steps. None runs commands, so --allow-commands is never needed.
+init = ["template-hooks/init.rhai"]
+pre = ["template-hooks/pre.rhai"]
+post = ["template-hooks/post.rhai"]

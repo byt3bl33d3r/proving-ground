@@ -4,7 +4,7 @@ title: Telemetry pipeline
 description: How the binaries emit traces, logs and metrics: tracing subscriber layers, OTLP export to the Victoria stack, and the local JSON log.
 tags: [observability, otel, victoria, logs, traces, metrics]
 status: stable
-code_refs: [crates/demo-app-runtime/src/telemetry.rs, harness/stack/compose.yaml]
+code_refs: [crates/{{project-name}}-runtime/src/telemetry.rs, harness/stack/compose.yaml]
 ---
 
 # Telemetry pipeline

@@ -3,8 +3,8 @@
 use std::net::SocketAddr;
 use std::time::Duration;
 
-use demo_app_core::platform::{Clock as _, TokioClock};
-use demo_app_core::types::Timestamp;
+use {{crate_name}}_core::platform::{Clock as _, TokioClock};
+use {{crate_name}}_core::types::Timestamp;
 
 /// A turmoil listener as an axum `Listener`.
 pub struct TurmoilListener(pub turmoil::net::TcpListener);

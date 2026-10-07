@@ -6,10 +6,10 @@ use std::collections::BTreeMap;
 use std::sync::Arc;
 
 use arbitrary::Arbitrary;
-use demo_app_core::domain::ItemService;
-use demo_app_core::platform::{SeededRng, TokioClock};
-use demo_app_core::repo::InMemoryItemRepo;
-use demo_app_core::types::{Item, ItemError, ItemId, Page, Timestamp};
+use {{crate_name}}_core::domain::ItemService;
+use {{crate_name}}_core::platform::{SeededRng, TokioClock};
+use {{crate_name}}_core::repo::InMemoryItemRepo;
+use {{crate_name}}_core::types::{Item, ItemError, ItemId, Page, Timestamp};
 use libfuzzer_sys::fuzz_target;
 
 #[derive(Arbitrary, Debug)]

@@ -4,7 +4,7 @@ title: Errors and exit codes
 description: Error types per layer, the JSON error body of the API, and the CLI exit codes 0 to 4.
 tags: [conventions, errors, cli, exit-codes]
 status: stable
-code_refs: [crates/demo-app-cli/src/error.rs, crates/demo-app-server/src/error.rs]
+code_refs: [crates/{{project-name}}-cli/src/error.rs, crates/{{project-name}}-server/src/error.rs]
 ---
 
 # Errors and exit codes
