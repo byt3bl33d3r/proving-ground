@@ -1,0 +1,29 @@
+# Project dylint lints (protected: ask before editing). A separate workspace with its own
+# nightly (rust-toolchain.toml), because dylint links against rustc internals.
+# Run through `just dylint`; UI tests with `cargo test` in this directory.
+[package]
+name = "harness_lints"
+version = "0.1.0"
+description = "Project lints for tracing usage: constant messages, field-name style"
+edition = "2024"
+publish = false
+
+[lib]
+crate-type = ["cdylib"]
+
+[[example]]
+name = "ui"
+path = "ui/main.rs"
+
+[dependencies]
+clippy_utils = { git = "https://github.com/rust-lang/rust-clippy", rev = "21baba9c10c5d179915cae82e6247bc2337872fb" }
+dylint_linting = "6.1.0"
+
+[dev-dependencies]
+dylint_testing = "6.1.0"
+tracing = "0.1.44"
+
+[package.metadata.rust-analyzer]
+rustc_private = true
+
+[workspace]

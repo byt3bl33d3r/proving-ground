@@ -33,6 +33,7 @@ disallowed-methods = [
   { path = "rand::rng", reason = "Use the core::platform::Rng from AppState, so seeds reproduce runs", allow-invalid = true },
   { path = "rand::random", reason = "Use the core::platform::Rng from AppState, so seeds reproduce runs", allow-invalid = true },
   { path = "std::env::var", reason = "Read configuration through runtime::config" },
+  { path = "std::env::var_os", reason = "Read configuration through runtime::config" },
   { path = "uuid::Uuid::now_v7", reason = "Build ids from core::platform::Clock and Rng (see server MakeRequestIdV7), so simulation repeats them" },
   { path = "uuid::Uuid::new_v4", reason = "Build ids from core::platform::Clock and Rng (see server MakeRequestIdV7), so simulation repeats them" },
 ]

@@ -65,6 +65,7 @@ tracing-opentelemetry = { version = "0.34.0", default-features = false, features
 # Testing
 insta = { version = "1.49.0", features = ["json", "redactions"] }
 trycmd = "1.2.1"
+toml = "1.1.6"
 proptest = "1.11.0"
 tracing-test = "0.2.6"
 
@@ -178,6 +179,10 @@ use_self = "deny"
 derive_partial_eq_without_eq = "deny"
 trait_duplication_in_bounds = "deny"
 type_repetition_in_bounds = "deny"
+
+# Project lints (harness/lints), run by `just dylint`.
+[workspace.metadata.dylint]
+libraries = [{ path = "harness/lints" }]
 
 [profile.release]
 debug = "line-tables-only" # asm, profiles and backtraces map to source

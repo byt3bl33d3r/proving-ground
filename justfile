@@ -210,6 +210,15 @@ panic-audit: nightly
 nightly:
     rustup toolchain list | grep -q "^$NIGHTLY" || rustup toolchain install "$NIGHTLY" --profile minimal -c rust-src,llvm-tools-preview,miri,clippy,rustfmt >&2
 
+# Regenerate docs/generated/ (crate graph, lint-exception ledger) from the source
+docs:
+    CHECKS_BLESS=1 cargo nextest run --locked -p checks -E 'binary(arch)' --no-fail-fast
+    jq -n '{docs: "regenerated", files: ["docs/generated/crate-graph.txt", "docs/generated/lint-exceptions.txt"]}'
+
+# Project lints from harness/lints (dylint, its own nightly); warnings fail
+dylint:
+    RUSTC_WRAPPER= DYLINT_RUSTFLAGS="-D warnings" cargo dylint --all -- --all-targets
+
 # Pre-push subset of tier 1 (see hk.pkl)
 ci-fast:
     just gates deny

@@ -1,0 +1,52 @@
+warning: telemetry field `badName` is not snake_case or a lowercase dotted OpenTelemetry name
+  --> $DIR/main.rs:4:1
+   |
+LL | #[tracing::instrument(fields(item_id = 1, badName = 2))]
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = help: Rename it, e.g. `item_id` or `http.request.method`. See docs/observability/fields.md#naming.
+   = note: `#[warn(telemetry_field_style)]` on by default
+
+warning: telemetry field `itemId` is not snake_case or a lowercase dotted OpenTelemetry name
+  --> $DIR/main.rs:16:5
+   |
+LL |     tracing::info!(itemId = %id, http.route = "/items", "item_created");
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = help: Rename it, e.g. `item_id` or `http.request.method`. See docs/observability/fields.md#naming.
+
+warning: telemetry field `RequestId` is not snake_case or a lowercase dotted OpenTelemetry name
+  --> $DIR/main.rs:17:17
+   |
+LL |     let _span = tracing::info_span!("create_item", RequestId = 1, http.request.method = "GET");
+   |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = help: Rename it, e.g. `item_id` or `http.request.method`. See docs/observability/fields.md#naming.
+
+warning: tracing message contains format arguments
+  --> $DIR/main.rs:11:5
+   |
+LL |     tracing::info!("created item {}", id);
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = help: Put variable data in fields, not the message: info!(item_id = %id, "item_created"). See docs/observability/fields.md.
+   = note: `#[warn(tracing_message_interpolation)]` on by default
+
+warning: tracing message contains format arguments
+  --> $DIR/main.rs:12:5
+   |
+LL |     tracing::warn!("created item {id}");
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = help: Put variable data in fields, not the message: info!(item_id = %id, "item_created"). See docs/observability/fields.md.
+
+warning: tracing message contains format arguments
+  --> $DIR/main.rs:15:5
+   |
+LL |     tracing::event!(tracing::Level::INFO, "event {}", name);
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = help: Put variable data in fields, not the message: info!(item_id = %id, "item_created"). See docs/observability/fields.md.
+
+warning: 6 warnings emitted
+

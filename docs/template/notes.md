@@ -43,6 +43,18 @@ Generated from the rust-project-template at v1.0.0.
   regex uses fragments (`panic_bounds_check|unwrap_failed|...|9panicking5panic`), and only
   functions owned by the core crate are kept (std generics instantiated with core types are not).
   `--llvm` mode also works on macOS, where assembly mode finds no call graph.
+- **dylint** (`harness/lints`, nightly-2026-08-20 from `cargo dylint new`): `telemetry_field_style`
+  is a *pre-expansion* pass, the only point where `#[instrument(fields(...))]` and the raw macro
+  arguments are still visible. `cargo dylint --all` exits 0 on warnings, so `just dylint` sets
+  `DYLINT_RUSTFLAGS="-D warnings"`. Both `just dylint` and the UI tests unset `RUSTC_WRAPPER`:
+  under sccache, dylint_testing sees no rustc invocations. The root `clippy.toml` thresholds also
+  apply to the separate workspaces (clippy searches parent directories).
+- **Lint-exception ledger** (`docs/generated/lint-exceptions.txt`) lists every `#[expect]` as
+  `path: lints -- reason` (no line numbers, so edits elsewhere in a file don't churn it). The
+  architecture test compares it; `just docs` (`CHECKS_BLESS=1`) rewrites it and the crate graph.
+- `std::env::var_os` is banned alongside `std::env::var`.
+- `core -> server` as a normal dependency is a Cargo cycle, so Cargo rejects it before any test
+  runs; the architecture test is demonstrated with a dev-dependency (and with `cli -> server`).
 - `just check` skips the "hooks installed" guard when `CI=true` (CI runners never run `hk install`).
 
 ## Verified values
