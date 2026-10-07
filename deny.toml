@@ -1,0 +1,50 @@
+# cargo-deny policy. Protected file: ask before editing (AGENTS.md).
+# `just deny` runs all checks; the pre-commit hook runs `bans licenses sources` offline.
+
+[graph]
+all-features = true
+
+[advisories]
+version = 2
+yanked = "deny"
+unmaintained = "all" # vulnerabilities are always denied in version 2
+# Every ignore needs a reason with an expiry date, e.g.
+# { id = "RUSTSEC-2026-0000", reason = "no fix released; re-check by 2026-12-31" },
+ignore = []
+
+[licenses]
+version = 2
+confidence-threshold = 0.93
+# Permissive licenses only. Anything else fails until a human approves it here.
+allow = [
+  "Apache-2.0",
+  "Apache-2.0 WITH LLVM-exception",
+  "BSD-2-Clause",
+  "BSD-3-Clause",
+  "BSL-1.0",
+  "CDLA-Permissive-2.0",
+  "ISC",
+  "MIT",
+  "MIT-0",
+  "Unicode-3.0",
+  "Zlib",
+]
+
+[licenses.private]
+ignore = true # this workspace's own crates (publish = false)
+
+[bans]
+multiple-versions = "warn"
+wildcards = "deny"
+allow-wildcard-paths = true
+deny = [
+  { crate = "openssl", reason = "Use rustls; OpenSSL is banned workspace-wide" },
+  { crate = "openssl-sys", reason = "Use rustls; OpenSSL is banned workspace-wide" },
+  { crate = "native-tls", reason = "Use rustls; OpenSSL is banned workspace-wide" },
+]
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]
+allow-git = [] # add an explicit entry (with a reason) before any git dependency

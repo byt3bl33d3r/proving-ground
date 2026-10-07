@@ -52,7 +52,13 @@ tracing-appender = "0.2.5"
 # opentelemetry-appender-tracing and tracing-opentelemetry upgrade together, in one PR.
 opentelemetry = { version = "0.33.0", default-features = false, features = ["trace", "metrics", "logs"] }
 opentelemetry_sdk = { version = "0.33.0", default-features = false, features = ["trace", "metrics", "logs"] }
-opentelemetry-otlp = { version = "0.33.0", default-features = false, features = ["http-proto", "reqwest-blocking-client", "trace", "metrics", "logs"] }
+opentelemetry-otlp = { version = "0.33.0", default-features = false, features = [
+  "http-proto",
+  "reqwest-blocking-client",
+  "trace",
+  "metrics",
+  "logs",
+] }
 opentelemetry-appender-tracing = { version = "0.33.0", default-features = false }
 tracing-opentelemetry = { version = "0.34.0", default-features = false, features = ["metrics"] }
 
@@ -65,9 +71,9 @@ tracing-test = "0.2.6"
 [workspace.lints.rust]
 unsafe_code = "forbid"
 rust_2018_idioms = { level = "deny", priority = -1 }
-unreachable_pub = "deny"                # visibility is the API surface agents read
-missing_debug_implementations = "deny"  # every type is printable in logs and test failures
-missing_docs = "warn"                   # -D warnings makes it fail; binaries' private items are exempt
+unreachable_pub = "deny" # visibility is the API surface agents read
+missing_debug_implementations = "deny" # every type is printable in logs and test failures
+missing_docs = "warn" # -D warnings makes it fail; binaries' private items are exempt
 unused_qualifications = "deny"
 unused_lifetimes = "deny"
 redundant_lifetimes = "deny"
@@ -77,7 +83,7 @@ trivial_numeric_casts = "deny"
 non_ascii_idents = "deny"
 unit_bindings = "deny"
 unfulfilled_lint_expectations = "deny"
-unknown_lints = "deny"                  # a renamed lint after a toolchain bump fails loudly
+unknown_lints = "deny" # a renamed lint after a toolchain bump fails loudly
 renamed_and_removed_lints = "deny"
 unexpected_cfgs = { level = "deny", check-cfg = ["cfg(kani)", "cfg(fuzzing)", "cfg(coverage_nightly)"] }
 
@@ -87,7 +93,7 @@ private_intra_doc_links = "deny"
 
 [workspace.lints.clippy]
 # Groups
-all = { level = "deny", priority = -1 }        # correctness, suspicious, style, complexity, perf
+all = { level = "deny", priority = -1 } # correctness, suspicious, style, complexity, perf
 pedantic = { level = "deny", priority = -1 }
 cargo = { level = "deny", priority = -1 }
 
@@ -95,7 +101,7 @@ cargo = { level = "deny", priority = -1 }
 must_use_candidate = "allow"
 missing_errors_doc = "allow"
 similar_names = "allow"
-multiple_crate_versions = "allow"   # cargo-deny reports duplicates instead
+multiple_crate_versions = "allow" # cargo-deny reports duplicates instead
 
 # Restriction: panics and silent failure
 unwrap_used = "deny"
@@ -159,7 +165,7 @@ empty_drop = "deny"
 empty_structs_with_brackets = "deny"
 empty_enum_variants_with_brackets = "deny"
 
-cognitive_complexity = "deny"   # restriction since clippy 1.9x (was nursery)
+cognitive_complexity = "deny" # restriction since clippy 1.9x (was nursery)
 
 # Nursery picks (individually, never the whole group)
 future_not_send = "deny"
@@ -174,7 +180,7 @@ trait_duplication_in_bounds = "deny"
 type_repetition_in_bounds = "deny"
 
 [profile.release]
-debug = "line-tables-only"   # asm, profiles and backtraces map to source
+debug = "line-tables-only" # asm, profiles and backtraces map to source
 
 [profile.profiling]
 inherits = "release"

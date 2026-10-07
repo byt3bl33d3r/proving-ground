@@ -1,0 +1,72 @@
+// Git hooks (hk v2). Installed by `just bootstrap` (`hk install --mise`); never optional.
+// Every step calls a `just` recipe or an hk builtin, so hooks, CI and agents run the same checks.
+// This file is copied verbatim by cargo-generate: `{{files}}` is hk's own templating.
+amends "package://github.com/jdx/hk/releases/download/v2.5.0/hk@2.5.0#/Config.pkl"
+import "package://github.com/jdx/hk/releases/download/v2.5.0/hk@2.5.0#/Builtins.pkl"
+
+// Formatting and lint steps: the `check` and `fix` hooks (and the agent Stop hook) run only
+// these, so they stay fast. Commands are CommandSpecs with an effect so `hk run check --safe`
+// (the agent Stop hook) accepts them.
+local lint = new Mapping<String, Step> {
+  ["cargo-fmt"] {
+    glob = List("**/*.rs")
+    check = new CommandSpec { command = "just fmt-check"; effect = "read" }
+    fix = new CommandSpec { command = "just fmt"; effect = "write" }
+  }
+  ["taplo"] = Builtins.taplo_format
+  ["clippy"] {
+    glob = List("**/*.rs", "**/Cargo.toml", "clippy.toml")
+    check = new CommandSpec { command = "just clippy"; effect = "write" }
+  }
+  ["typos"] = Builtins.typos
+  ["secrets"] {
+    check = new CommandSpec { command = "just secrets {{files}}"; effect = "read" }
+  }
+  ["machete"] {
+    glob = List("**/Cargo.toml")
+    check = new CommandSpec { command = "just machete"; effect = "read" }
+  }
+  ["deny-offline"] {
+    glob = List("**/Cargo.toml", "Cargo.lock", "deny.toml")
+    check = new CommandSpec { command = "cargo deny --offline check bans licenses sources"; effect = "read" }
+  }
+  ["actionlint"] = Builtins.actionlint
+  // Warn only: agents see which protected files a change touches before they commit.
+  ["protected-files"] {
+    glob = List(
+      "clippy.toml", "deny.toml", "Cargo.toml", "mise.toml", ".config/nextest.toml",
+      "docs/generated/lint-exceptions.txt", "docs/generated/panic-allowlist.txt",
+      "docs/observability/budgets.md", "harness/lints/**", "harness/checks/tests/arch.rs"
+    )
+    check = new CommandSpec { command = "just protected-files {{files}}"; effect = "read" }
+    allow_failure = true
+  }
+}
+
+hooks {
+  ["pre-commit"] {
+    fix = true
+    stash = "git"   // formatters never sweep unrelated work-in-progress into a commit
+    steps = (lint) {
+      ["secrets"] = (Builtins.gitleaks) { scan = "staged" }
+      ["affected-tests"] {
+        glob = List("**/*.rs", "**/Cargo.toml")
+        check = new CommandSpec { command = "just affected-tests {{files}}"; effect = "write" }
+      }
+      ["panic-audit"] {
+        glob = List("crates/*-core/src/**")
+        check = new CommandSpec { command = "just panic-audit"; effect = "write" }
+      }
+    }
+  }
+  ["pre-push"] {
+    steps {
+      ["ci-fast"] { check = new CommandSpec { command = "just ci-fast"; effect = "write" } }
+    }
+  }
+  ["check"] { steps = lint }
+  ["fix"] {
+    fix = true
+    steps = lint
+  }
+}

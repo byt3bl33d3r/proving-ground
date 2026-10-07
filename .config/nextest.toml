@@ -6,7 +6,7 @@ slow-timeout = "30s"
 
 [profile.ci]
 fail-fast = false
-retries = 0          # flaky tests are bugs, not retries
+retries = 0 # flaky tests are bugs, not retries
 
 [profile.ci.junit]
-path = "junit.xml"   # target/nextest/ci/junit.xml
+path = "junit.xml" # target/nextest/ci/junit.xml

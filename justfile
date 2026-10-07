@@ -98,10 +98,33 @@ gates *names:
     done
     if [ ${#failed[@]} -gt 0 ]; then echo "FAILED: ${failed[*]}" >&2; exit 1; fi
 
+# ── Setup ──────────────────────────────────────────────────────────────────────────────────
+
+# One-time setup per clone: lockfile, git hooks, tool checks, first build
+bootstrap:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    for tool in cargo docker hk jq cargo-nextest; do
+      command -v "$tool" >/dev/null || { echo "Missing $tool. Run: mise install (and install Docker)" >&2; exit 1; }
+    done
+    docker info >/dev/null 2>&1 || echo "warning: Docker is not running; just up needs it" >&2
+    [ -f Cargo.lock ] || cargo generate-lockfile
+    hk install --mise
+    cargo build --workspace --all-targets --locked
+    echo '{"bootstrap": "ok", "next": ["just up", "just check"]}'
+
+# Fail fast when the git hooks are not installed (skipped in CI, which runs `hk check --all`)
+[private]
+[no-exit-message]
+hooks-installed:
+    if [ "${CI:-}" != true ] && ! git hook list pre-commit 2>/dev/null | grep -qx hk-pre-commit \
+      && ! grep -qs 'hk run pre-commit' "$(git rev-parse --git-common-dir)/hooks/pre-commit"; then \
+      echo "Git hooks not installed. Run: just bootstrap" >&2; exit 1; fi
+
 # ── Tier 0 ─────────────────────────────────────────────────────────────────────────────────
 
 # Tier 0: fmt, clippy, tests, machete in every workspace (also runs on commit)
-check:
+check: hooks-installed
     just gates fmt-check clippy test machete
 
 # Format every workspace
@@ -124,6 +147,68 @@ test *args:
 machete:
     cargo machete
 
+# ── Hook steps (see hk.pkl) ────────────────────────────────────────────────────────────────
+
+# Warn when a change touches files that hold thresholds, baselines or lint policy
+[no-exit-message]
+protected-files *files:
+    #!/usr/bin/env bash
+    set -uo pipefail
+    [ -n "{{files}}" ] || exit 0
+    echo "Protected files changed: {{files}}" >&2
+    echo "These hold thresholds, baselines or lint policy (Cargo.toml: [workspace.lints]; mise.toml: COV_MIN_REGIONS)." >&2
+    echo "Ask a human before weakening any of them; never lower a threshold or baseline to make a check pass." >&2
+    exit 1
+
+# Scan files for secrets (gitleaks); the pre-commit hook scans the staged diff instead
+secrets *files:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    tmp=$(mktemp -d); trap 'rm -rf "$tmp"' EXIT
+    for f in {{files}}; do [ -f "$f" ] && mkdir -p "$tmp/$(dirname "$f")" && cp "$f" "$tmp/$f"; done
+    gitleaks dir --no-banner --redact --log-level warn "$tmp"
+
+# Run the tests of the packages that own the given files (all packages if core or the root manifest changed)
+affected-tests *files:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    all=false; pkgs=()
+    meta=$(cargo metadata --format-version 1 --no-deps --locked)
+    for f in {{files}}; do
+      case "$f" in Cargo.toml|Cargo.lock|crates/*-core/*) all=true ;; esac
+      dir=$(dirname "$f")
+      while [ "$dir" != . ] && [ ! -f "$dir/Cargo.toml" ]; do dir=$(dirname "$dir"); done
+      name=$(jq -r --arg m "$PWD/$dir/Cargo.toml" '.packages[] | select(.manifest_path == $m) | .name' <<<"$meta")
+      [ -n "$name" ] && pkgs+=(-p "$name")
+    done
+    if $all; then just test; elif [ ${#pkgs[@]} -gt 0 ]; then cargo nextest run --locked --no-tests=warn -E 'not binary(e2e)' "${pkgs[@]}"; fi
+
+# Functions in core's release build that can panic, compared with docs/generated/panic-allowlist.txt
+panic-audit:
+    #!/usr/bin/env bash
+    set -uo pipefail
+    mkdir -p target/harness
+    crate=$(tr - _ <<<"{{project}}")_core
+    regex='core::panicking::|std::panicking::begin_panic|unwrap_failed|expect_failed|index_len_fail|index_order_fail|slice_error_fail|str_index_overflow_fail'
+    cargo asm --lib -p "{{project}}-core" --llvm -s --json --callers-of "$regex" 1 2>target/harness/panic-audit.log \
+      | jq -r '.[].name' | grep "${crate}::" | grep -v '^core::ptr::drop_glue' | sort -u > target/harness/panic-callers.txt
+    new=$(grep -v -e '^#' -e '^$' docs/generated/panic-allowlist.txt | sort -u | comm -23 target/harness/panic-callers.txt -)
+    count=$(grep -c . <<<"$new" || true)
+    jq -n --arg new "$new" --argjson count "$count" '{check: "panic-audit", ok: ($count == 0), summary: (if $count == 0 then "no new panic paths" else "\($count) new panic path(s)" end), new_paths: ($new | split("\n") | map(select(. != ""))), details_path: "target/harness/panic-callers.txt", repro: "just panic-audit"}' > target/harness/panic-audit.json
+    [ "$count" = 0 ] && exit 0
+    while IFS= read -r fn; do
+      echo "New panic path in $fn. Remove it (iterators, hoisted assert, checked ops) or add it to the allowlist with a reason in the PR." >&2
+    done <<<"$new"
+    exit 1
+
+# Pre-push subset of tier 1 (see hk.pkl)
+ci-fast:
+    just gates deny
+
+# All cargo-deny checks (advisories need the network)
+deny:
+    cargo deny --locked check
+
 # ── Per-worktree harness ───────────────────────────────────────────────────────────────────
 
 # Print harness variables for a shell: eval "$(just env)"
@@ -131,7 +216,7 @@ env:
     env | grep -E '^(COMPOSE_PROJECT_NAME|VM_PORT|VL_PORT|VT_PORT|OTEL_[A-Z_]+|APP_LOG_JSON)=' | sort | sed 's/^/export /'
 
 # Start this worktree's telemetry stack and server; prints URLs as JSON
-up: check-ports
+up: hooks-installed check-ports
     mkdir -p .harness/logs
     {{compose}} up -d --quiet-pull >&2
     just wait-stack

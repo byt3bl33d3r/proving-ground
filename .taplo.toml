@@ -1,0 +1,8 @@
+# taplo (TOML formatter, run by the hk `taplo` step)
+exclude = ["target/**", "harness/*/target/**"]
+
+[formatting]
+align_comments = false
+column_width = 120
+array_auto_collapse = false
+reorder_keys = false
