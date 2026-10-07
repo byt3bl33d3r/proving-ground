@@ -4,6 +4,7 @@
 
 mod error;
 mod handlers;
+mod metrics;
 mod middleware;
 mod state;
 
@@ -25,7 +26,8 @@ pub use state::AppState;
 pub const DEFAULT_REQUEST_TIMEOUT: Duration = Duration::from_secs(10);
 
 /// Builds the application router. Middleware, outermost first: request id (UUID v7),
-/// `http_request` trace span, request-id propagation, JSON error bodies, timeout, panic catcher.
+/// `http_request` trace span (W3C `traceparent` extracted), request-duration metric,
+/// request-id propagation, JSON error bodies, timeout, panic catcher.
 pub fn router(state: AppState) -> Router {
     let request_ids = middleware::MakeRequestIdV7::new(&state);
     let layers = ServiceBuilder::new()
@@ -35,6 +37,10 @@ pub fn router(state: AppState) -> Router {
                 .make_span_with(middleware::make_span)
                 .on_response(middleware::on_response),
         )
+        .layer(axum::middleware::from_fn_with_state(
+            state.clone(),
+            metrics::record_duration,
+        ))
         .layer(PropagateRequestIdLayer::x_request_id())
         .layer(axum::middleware::from_fn(middleware::json_errors))
         .layer(TimeoutLayer::with_status_code(

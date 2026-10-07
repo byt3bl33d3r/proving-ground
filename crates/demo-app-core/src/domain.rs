@@ -4,6 +4,8 @@
 use std::sync::Arc;
 use std::time::Duration;
 
+use opentelemetry::global;
+use opentelemetry::metrics::Counter;
 use tracing::field::{Empty, display};
 use tracing::{Span, info, instrument};
 
@@ -18,18 +20,53 @@ pub const SLOW_PATH_DELAY: Duration = Duration::from_millis(300);
 /// Extra latency of the `buggify!` delayed write in `create`.
 pub const DELAYED_WRITE: Duration = Duration::from_millis(150);
 
+/// Domain counters, created from the global meter provider (no-ops until telemetry is set up).
+#[derive(Clone)]
+struct ItemMetrics {
+    created: Counter<u64>,
+    deleted: Counter<u64>,
+}
+
+impl ItemMetrics {
+    fn new() -> Self {
+        let meter = global::meter(env!("CARGO_PKG_NAME"));
+        Self {
+            created: meter
+                .u64_counter(fields::METRIC_ITEMS_CREATED)
+                .with_unit("{item}")
+                .build(),
+            deleted: meter
+                .u64_counter(fields::METRIC_ITEMS_DELETED)
+                .with_unit("{item}")
+                .build(),
+        }
+    }
+}
+
+impl std::fmt::Debug for ItemMetrics {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("ItemMetrics").finish_non_exhaustive()
+    }
+}
+
 /// The items service.
 #[derive(Debug, Clone)]
 pub struct ItemService {
     repo: Arc<dyn ItemRepo>,
     clock: Arc<dyn Clock>,
     rng: Arc<dyn Rng>,
+    metrics: ItemMetrics,
 }
 
 impl ItemService {
     /// Builds the service from its platform seams.
     pub fn new(repo: Arc<dyn ItemRepo>, clock: Arc<dyn Clock>, rng: Arc<dyn Rng>) -> Self {
-        Self { repo, clock, rng }
+        Self {
+            repo,
+            clock,
+            rng,
+            metrics: ItemMetrics::new(),
+        }
     }
 
     /// Validates `name` and stores a new item.
@@ -52,6 +89,7 @@ impl ItemService {
             .insert(item.clone())
             .await
             .map_err(storage_failed)?;
+        self.metrics.created.add(1, &[]);
         info!(item_id = %item.id, "item_created");
         Ok(item)
     }
@@ -90,6 +128,7 @@ impl ItemService {
     pub async fn delete(&self, id: &str) -> Result<(), ItemError> {
         let id = ItemId::parse(id).map_err(|e| failed(ItemError::Validation(e.into())))?;
         if self.repo.delete(id).await.map_err(storage_failed)? {
+            self.metrics.deleted.add(1, &[]);
             info!(item_id = %id, "item_deleted");
             Ok(())
         } else {

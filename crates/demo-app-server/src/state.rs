@@ -8,6 +8,8 @@ use demo_app_core::domain::ItemService;
 use demo_app_core::platform::{Clock, Rng};
 use demo_app_core::repo::InMemoryItemRepo;
 
+use crate::metrics::HttpMetrics;
+
 /// Everything handlers need. Cheap to clone.
 #[derive(Clone, Debug)]
 pub struct AppState {
@@ -16,6 +18,7 @@ pub struct AppState {
     rng: Arc<dyn Rng>,
     ready: Arc<AtomicBool>,
     request_timeout: Duration,
+    http_metrics: HttpMetrics,
 }
 
 impl AppState {
@@ -29,6 +32,7 @@ impl AppState {
             rng,
             ready: Arc::new(AtomicBool::new(false)),
             request_timeout,
+            http_metrics: HttpMetrics::new(),
         }
     }
 
@@ -50,6 +54,10 @@ impl AppState {
     /// Per-request timeout.
     pub const fn request_timeout(&self) -> Duration {
         self.request_timeout
+    }
+
+    pub(crate) const fn http_metrics(&self) -> &HttpMetrics {
+        &self.http_metrics
     }
 
     /// Marks the service ready: call once the router is serving and telemetry is initialized.

@@ -3,20 +3,9 @@
 
 use std::path::{Path, PathBuf};
 
+pub use demo_app_runtime::config::AppInfo;
 use demo_app_runtime::config::env_value;
-use serde::{Deserialize, Serialize};
 use serde_json::Value;
-
-/// `.harness/app.json`.
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
-pub struct AppInfo {
-    /// Server base URL.
-    pub url: String,
-    /// Server process id.
-    pub pid: u32,
-    /// Start time, milliseconds since the Unix epoch.
-    pub started_at: u64,
-}
 
 /// The harness directory: `$APP_HARNESS_DIR`, else the nearest `.harness` directory in the
 /// current directory or its ancestors.
@@ -32,7 +21,7 @@ pub fn dir() -> Option<PathBuf> {
 
 /// Reads `app.json` from the harness directory.
 pub fn app(dir: &Path) -> Option<AppInfo> {
-    serde_json::from_str(&std::fs::read_to_string(dir.join("app.json")).ok()?).ok()
+    AppInfo::read(dir)
 }
 
 /// Reads `stack.json` from the harness directory, as raw JSON.

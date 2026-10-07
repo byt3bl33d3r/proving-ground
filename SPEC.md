@@ -1117,5 +1117,6 @@ Answered by the human on 2026-10-07:
 1. **Template location:** a local git repository for now, not on GitHub. Generate with `cargo generate --path <template-repo>`. Tag releases locally; switch to `--git` if the repo is pushed later.
 2. **Docker:** required on every developer machine. `just up` and `just e2e` depend on it.
 3. **Unusable tools:** if anything in the verify list turns out unusable (for example the traces MCP server), stop and ask the human before falling back to the `just q-*` recipes or any other substitute. Do not decide this alone.
+4. **workz (asked 2026-10-07 during the build):** workz 0.11.0, the latest release, ignores `base_port`, refuses the main checkout, and keys port ranges by branch name across all repos (detached-HEAD worktrees share one range). Fixes exist only on unreleased upstream main. Decision: drop workz and use the hash-of-worktree-path fallback from Section 6, computed in the `justfile`; `.workz.toml` and the WorktreeCreate hook are not needed.
 
 No other open questions remain. New ones go to the human before work continues, and the answer is recorded here.

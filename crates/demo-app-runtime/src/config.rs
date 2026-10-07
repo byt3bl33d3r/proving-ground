@@ -3,7 +3,7 @@
 //! environment; everything else receives typed values.
 
 use std::net::{IpAddr, Ipv4Addr};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::time::Duration;
 
 use figment::Figment;
@@ -83,6 +83,43 @@ impl ServerConfig {
     /// The per-request timeout as a [`Duration`].
     pub const fn request_timeout(&self) -> Duration {
         Duration::from_millis(self.request_timeout_ms)
+    }
+}
+
+/// `.harness/app.json`: where this worktree's server listens. Written by the server after it
+/// binds, read by the CLI, `just` recipes and the e2e tests.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct AppInfo {
+    /// Server base URL.
+    pub url: String,
+    /// Server process id.
+    pub pid: u32,
+    /// Start time, milliseconds since the Unix epoch.
+    pub started_at: u64,
+}
+
+impl AppInfo {
+    /// File name inside the harness directory.
+    pub const FILE: &'static str = "app.json";
+
+    /// Writes `app.json` into `dir` (created if missing).
+    pub fn write(&self, dir: &Path) -> std::io::Result<()> {
+        std::fs::create_dir_all(dir)?;
+        let json = serde_json::to_string_pretty(self).map_err(std::io::Error::other)?;
+        std::fs::write(dir.join(Self::FILE), json)
+    }
+
+    /// Reads `app.json` from `dir`, if present and valid.
+    pub fn read(dir: &Path) -> Option<Self> {
+        serde_json::from_str(&std::fs::read_to_string(dir.join(Self::FILE)).ok()?).ok()
+    }
+
+    /// Removes `app.json` from `dir` (on clean shutdown).
+    pub fn remove(dir: &Path) -> std::io::Result<()> {
+        match std::fs::remove_file(dir.join(Self::FILE)) {
+            Err(e) if e.kind() != std::io::ErrorKind::NotFound => Err(e),
+            Ok(()) | Err(_) => Ok(()),
+        }
     }
 }
 

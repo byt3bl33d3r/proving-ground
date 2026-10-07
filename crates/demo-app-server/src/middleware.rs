@@ -11,10 +11,14 @@ use axum::http::{HeaderValue, Response, StatusCode};
 use axum::middleware::Next;
 use demo_app_core::fields;
 use demo_app_core::platform::{Clock, Rng};
+use opentelemetry::global;
+use opentelemetry::propagation::Extractor;
+use opentelemetry::trace::TraceContextExt as _;
 use serde_json::json;
 use tower_http::request_id::{MakeRequestId, RequestId};
 use tracing::Span;
 use tracing::field::Empty;
+use tracing_opentelemetry::OpenTelemetrySpanExt as _;
 
 use crate::AppState;
 use crate::error::ErrorDetails;
@@ -62,7 +66,7 @@ pub(crate) fn make_span(request: &Request<Body>) -> Span {
         .get(X_REQUEST_ID)
         .and_then(|value| value.to_str().ok())
         .unwrap_or_default();
-    tracing::info_span!(
+    let span = tracing::info_span!(
         "http_request",
         http.request.method = %request.method(),
         http.route = route,
@@ -70,7 +74,29 @@ pub(crate) fn make_span(request: &Request<Body>) -> Span {
         http.response.status_code = Empty,
         otel.kind = "server",
         otel.status_code = Empty,
-    )
+    );
+    let parent = global::get_text_map_propagator(|propagator| {
+        propagator.extract(&Headers(request.headers()))
+    });
+    if parent.span().span_context().is_valid()
+        && let Err(e) = span.set_parent(parent)
+    {
+        tracing::debug!(error = %e, "trace_parent_not_linked");
+    }
+    span
+}
+
+/// Reads W3C trace-context headers for the propagator.
+struct Headers<'a>(&'a axum::http::HeaderMap);
+
+impl Extractor for Headers<'_> {
+    fn get(&self, key: &str) -> Option<&str> {
+        self.0.get(key).and_then(|value| value.to_str().ok())
+    }
+
+    fn keys(&self) -> Vec<&str> {
+        self.0.keys().map(axum::http::HeaderName::as_str).collect()
+    }
 }
 
 /// Records the response status on the `http_request` span.

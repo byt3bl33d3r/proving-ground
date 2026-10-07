@@ -7,6 +7,8 @@ use demo_app_cli::args::{Cli, Command};
 use demo_app_cli::commands::{self, Outcome};
 use demo_app_cli::error::CliError;
 use demo_app_cli::output::{self, Format};
+use demo_app_runtime::telemetry::{self, Mode};
+use tracing::Instrument as _;
 
 fn main() -> ExitCode {
     let cli = match Cli::try_parse() {
@@ -21,7 +23,15 @@ fn main() -> ExitCode {
         }
     };
     let format = Format::resolve(cli.output);
-    match run(&cli, format) {
+    let telemetry = telemetry::init(
+        Mode::Cli { otel: cli.otel },
+        env!("CARGO_PKG_VERSION"),
+        cli.log_filter(),
+    );
+    let result = telemetry
+        .map_err(|e| CliError::usage("telemetry", e.to_string()))
+        .and_then(|_guard| run(&cli, format));
+    match result {
         Ok(()) => ExitCode::SUCCESS,
         Err(err) => {
             output::error(format, &err);
@@ -35,7 +45,8 @@ fn run(cli: &Cli, format: Format) -> Result<(), CliError> {
         .enable_all()
         .build()
         .map_err(|e| CliError::usage("runtime", e.to_string()))?;
-    let outcome = runtime.block_on(commands::run(cli))?;
+    let span = tracing::info_span!("run_command", command = ?cli.command);
+    let outcome = runtime.block_on(commands::run(cli).instrument(span))?;
     output::outcome(format, &outcome);
     match (&cli.command, &outcome) {
         (Command::Doctor, Outcome::Doctor(report)) => report.verdict(),

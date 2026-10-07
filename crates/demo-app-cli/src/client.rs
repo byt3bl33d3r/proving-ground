@@ -3,9 +3,14 @@
 use std::time::Duration;
 
 use demo_app_core::types::{CreateItem, Item, ItemId, ItemPage};
+use opentelemetry::global;
+use opentelemetry::propagation::Injector;
+use reqwest::header::{HeaderMap, HeaderName, HeaderValue};
 use reqwest::{RequestBuilder, Response, StatusCode};
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
+use tracing::Span;
+use tracing_opentelemetry::OpenTelemetrySpanExt as _;
 
 /// Request timeout for every call.
 pub const TIMEOUT: Duration = Duration::from_secs(10);
@@ -146,6 +151,7 @@ impl Client {
 
     async fn send(&self, request: RequestBuilder) -> Result<Response, ClientError> {
         let response = request
+            .headers(trace_headers())
             .send()
             .await
             .map_err(|e| unreachable(&self.base, &e))?;
@@ -162,6 +168,30 @@ impl Client {
             status: status.as_u16(),
             body: envelope.error,
         })
+    }
+}
+
+/// W3C `traceparent` for the current span, so the server's spans join the CLI's trace when the
+/// CLI runs with `--otel`. Empty when no propagator is installed.
+fn trace_headers() -> HeaderMap {
+    let mut headers = HeaderMap::new();
+    let context = Span::current().context();
+    global::get_text_map_propagator(|propagator| {
+        propagator.inject_context(&context, &mut Headers(&mut headers));
+    });
+    headers
+}
+
+struct Headers<'a>(&'a mut HeaderMap);
+
+impl Injector for Headers<'_> {
+    fn set(&mut self, key: &str, value: String) {
+        if let (Ok(name), Ok(value)) = (
+            HeaderName::from_bytes(key.as_bytes()),
+            HeaderValue::from_str(&value),
+        ) {
+            self.0.insert(name, value);
+        }
     }
 }
 

@@ -4,6 +4,12 @@ Generated from the rust-project-template at v1.0.0.
 
 ## Deviations from the spec
 
+- **workz dropped (human decision, SPEC §13 item 4).** workz 0.11.0 ignores `[isolation] base_port`
+  (ranges start at 3000), refuses `sync --isolated` in the main checkout, and keys allocations by
+  branch slug across all repos (two repos on the same branch, or any detached-HEAD worktrees,
+  share a range). Ports now come from a hash of the worktree path in the `justfile`
+  (Section 6's documented fallback): no `.workz.toml`, no registry, no WorktreeCreate hook.
+
 - Integration-test files start with `#![cfg(test)]`: clippy's `tests_outside_test_module` (1.98.1)
   fires on `#[test]` fns at the root of `tests/*.rs`; the crate-level attribute satisfies it.
 - Every crate sets `publish = false` (inherited from `[workspace.package]`), so clippy's

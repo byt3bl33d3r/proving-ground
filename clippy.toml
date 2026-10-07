@@ -10,6 +10,7 @@ too-many-arguments-threshold = 5
 type-complexity-threshold = 200
 max-fn-params-bools = 1
 max-struct-bools = 3
+# Lints names of at most this many chars: 1 = single-letter names (2 would also ban `id`, `io`)
 min-ident-chars-threshold = 1
 # Short names that stay readable in closures and loops
 allowed-idents-below-min-chars = ["i", "j", "n", "x", "y", "e", "k", "v", "f", ".."]
@@ -32,6 +33,8 @@ disallowed-methods = [
   { path = "rand::rng", reason = "Use the core::platform::Rng from AppState, so seeds reproduce runs", allow-invalid = true },
   { path = "rand::random", reason = "Use the core::platform::Rng from AppState, so seeds reproduce runs", allow-invalid = true },
   { path = "std::env::var", reason = "Read configuration through runtime::config" },
+  { path = "uuid::Uuid::now_v7", reason = "Build ids from core::platform::Clock and Rng (see server MakeRequestIdV7), so simulation repeats them" },
+  { path = "uuid::Uuid::new_v4", reason = "Build ids from core::platform::Clock and Rng (see server MakeRequestIdV7), so simulation repeats them" },
 ]
 disallowed-types = [
   { path = "std::collections::HashMap", reason = "Use core::platform::HashMap; iteration order must be deterministic under simulation" },

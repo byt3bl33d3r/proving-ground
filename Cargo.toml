@@ -46,6 +46,15 @@ clap = { version = "4.6.7", features = ["derive", "env"] }
 
 # Observability
 tracing = "0.1.44"
+tracing-subscriber = { version = "0.3.23", features = ["env-filter", "json"] }
+tracing-appender = "0.2.5"
+# OpenTelemetry family: opentelemetry, opentelemetry_sdk, opentelemetry-otlp,
+# opentelemetry-appender-tracing and tracing-opentelemetry upgrade together, in one PR.
+opentelemetry = { version = "0.33.0", default-features = false, features = ["trace", "metrics", "logs"] }
+opentelemetry_sdk = { version = "0.33.0", default-features = false, features = ["trace", "metrics", "logs"] }
+opentelemetry-otlp = { version = "0.33.0", default-features = false, features = ["http-proto", "reqwest-blocking-client", "trace", "metrics", "logs"] }
+opentelemetry-appender-tracing = { version = "0.33.0", default-features = false }
+tracing-opentelemetry = { version = "0.34.0", default-features = false, features = ["metrics"] }
 
 # Testing
 insta = { version = "1.49.0", features = ["json", "redactions"] }
@@ -85,7 +94,6 @@ cargo = { level = "deny", priority = -1 }
 # Pedantic/cargo relaxations (noise without much value here)
 must_use_candidate = "allow"
 missing_errors_doc = "allow"
-module_name_repetitions = "allow"
 similar_names = "allow"
 multiple_crate_versions = "allow"   # cargo-deny reports duplicates instead
 
@@ -151,11 +159,12 @@ empty_drop = "deny"
 empty_structs_with_brackets = "deny"
 empty_enum_variants_with_brackets = "deny"
 
+cognitive_complexity = "deny"   # restriction since clippy 1.9x (was nursery)
+
 # Nursery picks (individually, never the whole group)
 future_not_send = "deny"
 significant_drop_in_scrutinee = "deny"
 fallible_impl_from = "deny"
-cognitive_complexity = "deny"
 redundant_clone = "deny"
 needless_collect = "deny"
 or_fun_call = "deny"
