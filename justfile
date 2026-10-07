@@ -262,13 +262,14 @@ asm-snapshots:
 kani-setup:
     ls "$HOME/.kani" 2>/dev/null | grep -q "kani-$(cargo kani --version 2>/dev/null | awk '{print $NF}')" || cargo kani setup >&2
 
-# Kani quick harnesses (quick_*) on core
+# Kani quick harnesses (quick_*) on core. Every run has a per-harness timeout: CBMC can grow
+# without bound in memory, so a slow harness is a bug to fix, not to wait out.
 kani: kani-setup
-    RUSTC_WRAPPER= cargo kani -p "{{project}}-core" --harness quick_
+    RUSTC_WRAPPER= cargo kani -p "{{project}}-core" --harness quick_ -Z unstable-options --harness-timeout 2m
 
 # Every Kani harness on core, higher unwind bounds (tier 3)
 kani-full: kani-setup
-    RUSTC_WRAPPER= cargo kani -p "{{project}}-core"
+    RUSTC_WRAPPER= cargo kani -p "{{project}}-core" -Z unstable-options --harness-timeout 15m
 
 # Miri on core's tests (strict provenance); tests that touch files or the network are ignored
 miri: nightly

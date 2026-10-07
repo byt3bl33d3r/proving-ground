@@ -77,8 +77,11 @@ Generated from the rust-project-template at v1.0.0.
   hook once. hk's own MCP server is added to both agents. A rust-analyzer MCP server and a Codex
   skill are not added (no verified project-level skills directory for Codex 0.157).
 - **Kani:** the quick tier proves id parsing, the `Page` invariant and pagination math in seconds;
-  the `ItemName` invariant and full-length id round trips are tier 3 (CBMC is slow on symbolic
-  strings; `str::trim` alone took 254 s), and `ItemName` trims ASCII whitespace only.
+  the full tier proves the byte-level hex decoder. Harnesses over symbolic strings are not used:
+  a full-length id round trip made CBMC run out of memory (~60 GB) and `str::trim` alone took
+  254 s, so the `ItemName` invariant and id round trips are covered by proptest and fuzzing, and
+  `ItemName` trims ASCII whitespace only. Kani runs with `-Z unstable-options --harness-timeout`
+  (2 min quick, 15 min full) so a runaway harness is killed rather than exhausting memory.
 - **Miri** runs on core; tests that need tokio's runtime are ignored off Linux (Miri has no
   kqueue), and proptests and real-clock tests are ignored under Miri (file and clock access).
 - **Fuzz corpora:** the template ships a seed corpus only; generated projects commit their own

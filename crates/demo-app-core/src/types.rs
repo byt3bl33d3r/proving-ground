@@ -38,15 +38,23 @@ impl ItemId {
         }
         hex.bytes()
             .try_fold(0_u64, |acc, byte| {
-                let digit = match byte {
-                    b'0'..=b'9' => byte.checked_sub(b'0'),
-                    b'a'..=b'f' => byte.checked_sub(b'a').and_then(|low| low.checked_add(10)),
-                    _ => None,
-                }?;
-                acc.checked_mul(16)?.checked_add(u64::from(digit))
+                acc.checked_mul(16)?
+                    .checked_add(u64::from(hex_value(byte)?))
             })
             .map(Self)
             .ok_or(ParseIdError::InvalidDigit)
+    }
+}
+
+/// Value of one lowercase hex digit, `None` for any other byte.
+pub(crate) const fn hex_value(byte: u8) -> Option<u8> {
+    match byte {
+        b'0'..=b'9' => byte.checked_sub(b'0'),
+        b'a'..=b'f' => match byte.checked_sub(b'a') {
+            Some(low) => low.checked_add(10),
+            None => None,
+        },
+        _ => None,
     }
 }
 
