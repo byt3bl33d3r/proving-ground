@@ -13,6 +13,13 @@ Generated from the {{template_repo}} at {{template_version}}.
 
 ## Deviations from the spec
 
+- **AGENTS.md is a map into the okf bundle (human decision).** SPEC §10 says AGENTS.md is the
+  only place rules live. Instead it keeps the project-memory instructions (in okf's managed
+  block), a commands pointer and the rules nothing else enforces (hooks, protected files,
+  failing test first, finishing). Commands, debugging and failure handling moved to
+  conventions/agent-workflow, the okf how-to to conventions/project-memory, and the code rules
+  that lints and tests enforce to the concepts their messages point at.
+
 - **workz dropped (human decision, SPEC §13 item 4).** workz 0.11.0 ignores `[isolation] base_port`
   (ranges start at 3000), refuses `sync --isolated` in the main checkout, and keys allocations by
   branch slug across all repos (two repos on the same branch, or any detached-HEAD worktrees,
@@ -74,9 +81,9 @@ Generated from the {{template_repo}} at {{template_version}}.
   `.md` links to concepts (a gate under `--strict`) and `code_refs` paths (a `--drift` warning,
   which `just knowledge` fails on); it never sees paths in inline code or links to non-`.md`
   files. So concepts link other concepts with Markdown links and list the repo paths they govern
-  in `code_refs`. `okf agents lint` (AAG rules) is not run: its default 400-token budget is far
-  below the roughly 100-line map SPEC asks for, and the architecture test already enforces the
-  120-line limit and that every path in AGENTS.md exists.
+  in `code_refs`. `just knowledge` also runs `okf agents lint --strict AGENTS.md`
+  (AAG rules, 400-token budget for the okf memory block between its BEGIN and END markers);
+  the architecture test still enforces the 120-line limit and that every path in AGENTS.md exists.
 - **Agents start tools through `mise x --`.** The MCP servers (`mise x -- just mcp ...`,
   `mise x -- okf mcp docs`, `mise x -- hk mcp`) and the Stop and WorktreeRemove hooks run through
   mise, as the git hooks do, so desktop agent apps that do not load the shell profile only need

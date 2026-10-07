@@ -20,7 +20,9 @@ code_refs: [.config/nextest.toml, crates/{{project-name}}-server/tests/api.rs, c
 | End to end | CLI client against `just up` | `harness/checks/tests/e2e.rs` | `just e2e` |
 | DST | turmoil + mad-turmoil + buggify | `harness/dst` | `just dst` |
 
-Integration test files start with `#![cfg(test)]` (clippy's `tests_outside_test_module`). Every
+Every bug fix adds a failing test first: a unit or snapshot test, a trycmd transcript, an e2e
+test, a DST seed or a fuzz regression. A new failure mode in the domain gets a `buggify!` site, so
+`just dst` explores it. Integration test files start with `#![cfg(test)]` (clippy's `tests_outside_test_module`). Every
 assertion carries a message. Time and randomness come from `core::platform`
 ([determinism](/testing/determinism.md)); the simulation is described in [DST](/testing/dst.md).
 There are no browser or UI tests: the template has no UI. The plan for one (Playwright, WebDriver

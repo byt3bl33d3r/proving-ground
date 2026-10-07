@@ -15,8 +15,9 @@ description: Reproduce, observe, fix and verify a bug or behaviour change in thi
      docs/observability/queries.md.
 3. **Write the failing test first**: unit/snapshot test, a trycmd transcript, an e2e test in
    harness/checks/tests/e2e.rs, a DST seed (`just dst SEED=<n> TEST=<name>`) or a fuzz regression.
-4. **Fix** within the rules in AGENTS.md (core::platform for time and randomness, typed errors,
-   tracing with constant messages).
+4. **Fix** within the rules: AGENTS.md, plus the concepts `okf search "<topic>" docs` (or the
+   okf-memory MCP server) finds for the code you touch (core::platform for time and randomness,
+   typed errors, tracing with constant messages).
 5. **Verify**: `just check`, then `just e2e` (tests plus budgets) and `just dst`. For performance
    changes, Gungraun numbers (`just gungraun`) and `just perf`. Finish with `just down` if you
    started the stack.

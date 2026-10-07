@@ -11,6 +11,8 @@ code_refs: [Cargo.toml, clippy.toml, deny.toml, .config/nextest.toml, docs/gener
 
 - `[workspace.lints]` denies clippy's `all`, `pedantic` and `cargo` groups plus selected
   restriction and nursery lints; `cargo clippy -- -D warnings` runs in every workspace.
+- No `unwrap`, `expect` or `panic!` outside tests (`unwrap_used`, `expect_used` and `panic` are
+  denied); return typed [errors](/conventions/errors.md) instead.
 - The only escape hatch is `#[expect(lint, reason = "...")]` on the smallest item. `#[allow]` is
   an error, and an expectation that no longer fires is an error.
 - Every `#[expect]` is listed in `docs/generated/lint-exceptions.txt`; a new one fails the

@@ -18,6 +18,10 @@ Four crates ship; everything else verifies or observes them.
 | `crates/<project>-server` | `router(state)`, `AppState`, middleware, handlers; a thin axum `main.rs` |
 | `crates/<project>-cli` | typed HTTP `client`, `commands`, `output`; a thin clap `main.rs` |
 
+Two seams keep side effects in one place: environment and configuration are read only through
+`runtime::config`, and user-facing CLI output goes only through `cli::output` (clippy bans
+`std::env::var` and `println!` elsewhere, naming the seam).
+
 `harness/` holds `checks` (architecture and e2e tests), `dst` and `fuzz` (separate workspaces),
 `lints` (dylint) and `stack` (the local Victoria compose file).
 

@@ -17,5 +17,5 @@ code_refs: [crates/{{project-name}}-core/benches/instructions.rs, crates/{{proje
   equal the library version exactly.
 - **Criterion** (`just criterion`, part of `just perf`): wall-clock confirmation only, never gates.
 
-Accept a performance change when Gungraun improves, the tests still pass and Criterion agrees.
+Performance claims need Gungraun numbers, not wall-clock alone. Accept a performance change when Gungraun improves, the tests still pass and Criterion agrees.
 The functions measured are the [hot paths](/performance/hot-paths.md).

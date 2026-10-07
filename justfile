@@ -177,12 +177,16 @@ knowledge:
     set -uo pipefail
     mkdir -p target/harness
     okf validate docs --strict --drift --stale --json > target/harness/okf-validate.json
-    jq '{check: "knowledge", ok: (.gate_passed and .is_conformant and ((.warnings // []) | length) == 0 and ((.errors // []) | length) == 0),
+    # AGENTS.md's okf memory block stays within okf's token budget (AAG rules); --json exits 0
+    okf agents lint --strict --json AGENTS.md > target/harness/okf-agents.json 2>/dev/null
+    jq --slurpfile agents target/harness/okf-agents.json '($agents[0] // {passed: false, findings: [{line: 0, rule_id: "lint", message: "okf agents lint produced no result"}]}) as $aag
+      | {check: "knowledge", ok: (.gate_passed and .is_conformant and ((.warnings // []) | length) == 0 and ((.errors // []) | length) == 0 and $aag.passed),
          concepts: .concept_count, broken_links: ((.broken_links // []) | length), orphans: ((.orphans // []) | length),
          drifted: ([(.warnings // [])[] | select(test("differs from concept description|not listed in parent index|does not exist|non-existent"))] | length),
-         stale: .stale_count, findings: ((.errors // []) + (.gate_findings // []) + (.warnings // [])),
-         summary: "\(.concept_count) concepts, \((.errors // []) | length) errors, \((.gate_findings // []) | length) gate findings, \((.warnings // []) | length) warnings",
-         details_path: "target/harness/okf-validate.json", repro: "okf validate docs --strict --drift --stale"}' \
+         stale: .stale_count, agents_md_tokens: $aag.token_stats.estimated_tokens,
+         findings: ((.errors // []) + (.gate_findings // []) + (.warnings // []) + [($aag.findings // [])[] | "AGENTS.md:\(.line) \(.rule_id) \(.message)"]),
+         summary: "\(.concept_count) concepts, \((.errors // []) | length) errors, \((.gate_findings // []) | length) gate findings, \((.warnings // []) | length) warnings; AGENTS.md lint \(if $aag.passed then "passed" else "failed" end)",
+         details_path: "target/harness/okf-validate.json", repro: "okf validate docs --strict --drift --stale && okf agents lint --strict AGENTS.md"}' \
       target/harness/okf-validate.json > target/harness/knowledge.json
     jq -r '.findings[]' target/harness/knowledge.json >&2
     jq -e .ok target/harness/knowledge.json > /dev/null

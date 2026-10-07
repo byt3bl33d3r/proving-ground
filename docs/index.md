@@ -6,6 +6,8 @@ okf_version: "0.2"
 
 Project memory for this repository, an OKF v0.2 bundle. Search before you write or ask:
 `okf search "..." docs` or the okf-memory MCP server. Validate with `just knowledge`.
+Agents: [agent workflow](conventions/agent-workflow.md) for commands and failures,
+[project memory](conventions/project-memory.md) for recalling and recording knowledge.
 
 # Sections
 
@@ -14,7 +16,7 @@ Project memory for this repository, an OKF v0.2 bundle. Search before you write 
 * [Testing](testing/index.md) - Test kinds, determinism rules and deterministic simulation.
 * [Hardening](hardening/index.md) - Check tiers, panic audit, Kani, fuzzing and sanitizers.
 * [Performance](performance/index.md) - Hot paths and benchmarks; Gungraun gates, Criterion informs.
-* [Conventions](conventions/index.md) - Errors and exit codes, module size, lint policy.
+* [Conventions](conventions/index.md) - How agents work here (commands, project memory), errors and exit codes, module size, lint policy.
 * [Decisions](decisions/index.md) - Architecture decision records.
 * [Plans](plans/index.md) - Multi-step work: active plans are status draft with tag active; finished ones are stable with tag completed.
 * [Template](template/index.md) - Template deviations and verified tool versions.
