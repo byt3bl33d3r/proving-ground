@@ -1,0 +1,14 @@
+# Protected files: changes need a maintainer's review. Agents ask before editing these
+# (AGENTS.md); the hk protected-files step warns when a commit touches them.
+# Replace @your-org/maintainers with the real owners.
+/clippy.toml                          @your-org/maintainers
+/deny.toml                            @your-org/maintainers
+/Cargo.toml                           @your-org/maintainers
+/.config/nextest.toml                 @your-org/maintainers
+/mise.toml                            @your-org/maintainers
+/docs/observability/budgets.md        @your-org/maintainers
+/docs/generated/lint-exceptions.txt   @your-org/maintainers
+/docs/generated/panic-allowlist.txt   @your-org/maintainers
+/harness/lints/                       @your-org/maintainers
+/harness/checks/tests/arch.rs         @your-org/maintainers
+/.github/                             @your-org/maintainers

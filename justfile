@@ -257,12 +257,17 @@ cov-ratchet: coverage
 asm-snapshots:
     INSTA_UPDATE=no cargo nextest run --locked -p checks -E 'binary(asm)'
 
+# Install Kani's verifier bundle once (cargo-kani itself comes from mise)
+[private]
+kani-setup:
+    ls "$HOME/.kani" 2>/dev/null | grep -q "kani-$(cargo kani --version 2>/dev/null | awk '{print $NF}')" || cargo kani setup >&2
+
 # Kani quick harnesses (quick_*) on core
-kani:
+kani: kani-setup
     RUSTC_WRAPPER= cargo kani -p "{{project}}-core" --harness quick_
 
 # Every Kani harness on core, higher unwind bounds (tier 3)
-kani-full:
+kani-full: kani-setup
     RUSTC_WRAPPER= cargo kani -p "{{project}}-core"
 
 # Miri on core's tests (strict provenance); tests that touch files or the network are ignored
@@ -342,6 +347,90 @@ harden:
 release:
     just gates public-api
 
+# Linux CI runner extras not managed by mise (Valgrind for Gungraun, Kani's bundle)
+ci-deps: kani-setup
+    if [ "$(uname -s)" = Linux ] && ! command -v valgrind >/dev/null; then sudo apt-get update -qq && sudo apt-get install -y -qq valgrind >&2; fi
+
+# PR knowledge check: docs/ changes need a docs/log.md entry; lists changed concepts (comments on PR `pr`)
+knowledge-pr base pr="":
+    #!/usr/bin/env bash
+    set -euo pipefail
+    mkdir -p target/harness
+    [ -n "$(git diff --name-only "{{base}}"...HEAD -- docs/)" ] || { echo '{"docs_changed": false}'; exit 0; }
+    if ! git diff "{{base}}"...HEAD -- docs/log.md | grep -qE '^\+\* '; then
+      echo "docs/ changed without a log.md entry; run okf update or add one" >&2; exit 1
+    fi
+    body=target/harness/knowledge-comment.md
+    {
+      echo "### Knowledge changes"
+      git diff --name-only "{{base}}"...HEAD -- 'docs/*.md' | grep -v -e '/index.md$' -e '^docs/log.md$' | while read -r file; do
+        id=${file#docs/}; id=${id%.md}
+        okf show "$id" docs --json 2>/dev/null | jq -r '"- **\(.title)** (`\(.id)`): \(.description)"' || echo "- \`$id\` (removed)"
+      done
+    } > "$body"
+    if [ -n "{{pr}}" ] && command -v gh >/dev/null; then gh pr comment "{{pr}}" --body-file "$body"; else cat "$body"; fi
+
+# Open or update one issue for a failed nightly check, with the harness JSON and repro lines
+report-failure name:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    title="hardening: {{name}} failed"
+    body=$(mktemp)
+    {
+      echo "Nightly \`just {{name}}\` failed on $(git rev-parse --short HEAD) ($(date -u +%F))."
+      echo; echo '```json'; jq -s . target/harness/*.json 2>/dev/null || echo '[]'; echo '```'
+      grep -rhs 'Reproduce:' target/harness harness/dst/target | sort -u | head -5
+      echo; echo "Rerun: just {{name}}"
+    } > "$body"
+    number=$(gh issue list --state open --search "in:title \"$title\"" --json number --jq '.[0].number // empty')
+    if [ -n "$number" ]; then gh issue comment "$number" --body-file "$body"; else gh issue create --title "$title" --body-file "$body"; fi
+
+# Weekly upkeep report (target/harness/gardening.md); --issue opens or updates one issue
+gardening *flags:
+    #!/usr/bin/env bash
+    set -uo pipefail
+    mkdir -p target/harness
+    report=target/harness/gardening.md
+    month_ago=$(( $(date +%s) - 30 * 86400 )); quarter_ago=$(( $(date +%s) - 90 * 86400 ))
+    {
+      echo "# Gardening report $(date -u +%F)"
+      echo; echo "## Knowledge (okf validate --drift --stale)"
+      okf validate docs --drift --stale 2>&1 | grep -E '^(warn|gate|error)' || echo "clean"
+      echo; echo "## Concepts unverified after 30 days"
+      okf search "" docs --scope project --filter "verified=null" --limit 500 --json 2>/dev/null | jq -r '.[]?.concept_id' | while read -r id; do
+        created=$(git log --diff-filter=A --format=%ct -- "docs/$id.md" | tail -1)
+        [ -n "$created" ] && [ "$created" -lt "$month_ago" ] && echo "- $id"
+      done
+      echo; echo "## Plans active for more than 30 days"
+      okf search "" docs --scope project --filter "type=Plan,status=draft" --limit 500 --json 2>/dev/null | jq -r '.[]?.concept_id' | while read -r id; do
+        created=$(git log --diff-filter=A --format=%ct -- "docs/$id.md" | tail -1)
+        [ -n "$created" ] && [ "$created" -lt "$month_ago" ] && echo "- $id"
+      done
+      echo; echo "## #[expect] older than 90 days"
+      git grep -n -E '^\s*#!?\[expect\(' -- '*.rs' | while IFS=: read -r file line _; do
+        when=$(git blame -L "$line,$line" --porcelain -- "$file" | sed -n 's/^author-time //p')
+        [ -n "$when" ] && [ "$when" -lt "$quarter_ago" ] && echo "- $file:$line"
+      done
+      echo; echo "## docs/generated drift"
+      just docs >/dev/null 2>&1; git diff --stat -- docs/generated || true
+      echo; echo "## Outdated dependencies"
+      cargo outdated --workspace --root-deps-only 2>/dev/null | tail -n +1 || echo "cargo outdated failed"
+    } > "$report"
+    cat "$report"
+    if [[ " {{flags}} " == *" --issue "* ]]; then
+      number=$(gh issue list --state open --search 'in:title "gardening report"' --json number --jq '.[0].number // empty')
+      if [ -n "$number" ]; then gh issue edit "$number" --body-file "$report"; else gh issue create --title "gardening report" --body-file "$report"; fi
+    fi
+
+# Validate the GitHub workflows (wrkflw + actionlint)
+ci-validate:
+    wrkflw validate .github/workflows
+    actionlint
+
+# Run one workflow job locally in Docker (act); pass -s GITHUB_TOKEN=... for API steps
+ci-local job *flags:
+    act -j "{{job}}" -P ubuntu-latest=catthehacker/ubuntu:act-latest {{flags}}
+
 # All hk steps on every file (catches commits made with hooks bypassed)
 hk-all:
     hk check --all
@@ -364,10 +453,22 @@ gungraun save="" baseline="":
       jq -n '{check: "gungraun", ok: true, summary: "skipped: gungraun needs Valgrind (Linux)", details_path: null, repro: "just gungraun"}' > target/harness/gungraun.json
       echo "skipped: gungraun needs Valgrind (Linux)"; exit 0
     fi
+    export GUNGRAUN_HOME="{{root}}/target/gungraun"
     args=()
     [ -n "{{save}}" ] && args+=(--save-baseline="{{save}}")
     [ -n "{{baseline}}" ] && args+=(--baseline="{{baseline}}")
     cargo bench --locked -p "{{project}}-core" --bench instructions -- ${args[@]+"${args[@]}"}
+
+# Save a Gungraun baseline named `base` from another commit (CI: the PR's base)
+gungraun-baseline sha:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if [ "$(uname -s)" != Linux ] || ! command -v valgrind >/dev/null; then echo "skipped: gungraun needs Valgrind (Linux)"; exit 0; fi
+    dir="{{root}}/target/gungraun-base-src"
+    rm -rf "$dir" && git worktree prune && git worktree add --detach "$dir" "{{sha}}" >&2
+    (cd "$dir" && GUNGRAUN_HOME="{{root}}/target/gungraun" cargo bench -p "{{project}}-core" --bench instructions -- --save-baseline=base) >&2 \
+      || echo "base commit has no instruction benchmarks; comparing against nothing" >&2
+    git worktree remove --force "$dir"
 
 # Host target triple, for sanitizer builds
 [private]

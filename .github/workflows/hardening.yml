@@ -1,0 +1,60 @@
+# Tier 3, nightly. Each matrix entry runs one `just` recipe; a failure opens or updates an issue
+# with the harness JSON and the repro line (`just report-failure`).
+name: hardening
+
+on:
+  schedule:
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+env:
+  CARGO_TERM_COLOR: always
+  NEXTEST_PROFILE: ci
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+jobs:
+  harden:
+    name: ${{ matrix.recipe }}
+    strategy:
+      fail-fast: false
+      matrix:
+        recipe:
+          - fuzz parse_item_id 600
+          - fuzz decode_create_item 600
+          - fuzz differential_core 600
+          - dst SEEDS=10000 START=0
+          - dst SEEDS=10000 START=10000
+          - dst SEEDS=10000 START=20000
+          - dst SEEDS=10000 START=30000
+          - dst SEEDS=10000 START=40000
+          - dst SEEDS=10000 START=50000
+          - dst SEEDS=10000 START=60000
+          - dst SEEDS=10000 START=70000
+          - dst SEEDS=10000 START=80000
+          - dst SEEDS=10000 START=90000
+          - asan
+          - tsan
+          - kani-full
+          - mutants
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: jdx/mise-action@2d8d4cafcbd33be2ea37d2b6f5ad595363d1f1ca # v5.1.1
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+      - run: just ${{ matrix.recipe }}
+      - if: failure()
+        run: just report-failure "${{ matrix.recipe }}"
+      - if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: harness-${{ strategy.job-index }}
+          path: |
+            target/harness/
+            harness/fuzz/artifacts/
+            harness/dst/target/dst-failure-*.jsonl
+          if-no-files-found: ignore
