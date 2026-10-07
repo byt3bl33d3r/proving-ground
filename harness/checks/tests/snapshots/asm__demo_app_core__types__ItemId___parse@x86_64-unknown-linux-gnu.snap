@@ -1,0 +1,272 @@
+---
+source: harness/checks/tests/asm.rs
+expression: asm
+---
+<demo_app_core::types::ItemId>::parse:
+	mov rax, rdi
+	cmp rdx, 4
+	jb [bb_2]
+	cmp dword ptr [rsi], 1601008745
+	je [bb_4]
+[bb_2]:
+	mov qword ptr [rax], 0
+	ret
+[bb_4]:
+	add rdx, -4
+	cmp rdx, 16
+	jne [bb_55]
+	push rbp
+	push r15
+	push r14
+	push r13
+	push r12
+	push rbx
+	movzx edx, byte ptr [rsi + 4]
+	lea ecx, [rdx - 48]
+	cmp cl, 10
+	jb [bb_8]
+	lea ecx, [rdx - 97]
+	mov r13d, 2
+	cmp cl, 5
+	ja [bb_54]
+	add dl, -87
+	mov ecx, edx
+[bb_8]:
+	movzx edi, byte ptr [rsi + 5]
+	lea edx, [rdi - 48]
+	cmp dl, 10
+	jb [bb_11]
+	lea edx, [rdi - 97]
+	mov r13d, 2
+	cmp dl, 5
+	ja [bb_54]
+	add dil, -87
+	mov edx, edi
+[bb_11]:
+	movzx r8d, byte ptr [rsi + 6]
+	lea edi, [r8 - 48]
+	cmp dil, 10
+	jb [bb_14]
+	lea edi, [r8 - 97]
+	mov r13d, 2
+	cmp dil, 5
+	ja [bb_54]
+	add r8b, -87
+	mov edi, r8d
+[bb_14]:
+	movzx r9d, byte ptr [rsi + 7]
+	lea r8d, [r9 - 48]
+	cmp r8b, 10
+	jb [bb_17]
+	lea r8d, [r9 - 97]
+	mov r13d, 2
+	cmp r8b, 5
+	ja [bb_54]
+	add r9b, -87
+	mov r8d, r9d
+[bb_17]:
+	movzx r10d, byte ptr [rsi + 8]
+	lea r9d, [r10 - 48]
+	cmp r9b, 10
+	jb [bb_20]
+	lea r9d, [r10 - 97]
+	mov r13d, 2
+	cmp r9b, 5
+	ja [bb_54]
+	add r10b, -87
+	mov r9d, r10d
+[bb_20]:
+	movzx r11d, byte ptr [rsi + 9]
+	lea r10d, [r11 - 48]
+	cmp r10b, 10
+	jb [bb_23]
+	lea r10d, [r11 - 97]
+	mov r13d, 2
+	cmp r10b, 5
+	ja [bb_54]
+	add r11b, -87
+	mov r10d, r11d
+[bb_23]:
+	movzx ebx, byte ptr [rsi + 10]
+	lea r11d, [rbx - 48]
+	cmp r11b, 10
+	jb [bb_26]
+	lea r11d, [rbx - 97]
+	mov r13d, 2
+	cmp r11b, 5
+	ja [bb_54]
+	add bl, -87
+	mov r11d, ebx
+[bb_26]:
+	movzx r14d, byte ptr [rsi + 11]
+	lea ebx, [r14 - 48]
+	cmp bl, 10
+	jb [bb_29]
+	lea ebx, [r14 - 97]
+	mov r13d, 2
+	cmp bl, 5
+	ja [bb_54]
+	add r14b, -87
+	mov ebx, r14d
+[bb_29]:
+	movzx r14d, byte ptr [rsi + 12]
+	lea ebp, [r14 - 48]
+	cmp bpl, 10
+	jb [bb_32]
+	lea ebp, [r14 - 97]
+	mov r13d, 2
+	cmp bpl, 5
+	ja [bb_54]
+	add r14b, -87
+	mov ebp, r14d
+[bb_32]:
+	movzx r15d, byte ptr [rsi + 13]
+	lea r14d, [r15 - 48]
+	cmp r14b, 10
+	jb [bb_35]
+	lea r14d, [r15 - 97]
+	mov r13d, 2
+	cmp r14b, 5
+	ja [bb_54]
+	add r15b, -87
+	mov r14d, r15d
+[bb_35]:
+	movzx r12d, byte ptr [rsi + 14]
+	lea r15d, [r12 - 48]
+	mov dword ptr [rsp - 4], r15d
+	cmp r15b, 10
+	jb [bb_38]
+	lea r15d, [r12 - 97]
+	mov r13d, 2
+	cmp r15b, 5
+	ja [bb_54]
+	add r12b, -87
+	mov r15d, r12d
+	mov dword ptr [rsp - 4], r15d
+[bb_38]:
+	movzx r12d, byte ptr [rsi + 15]
+	lea r15d, [r12 - 48]
+	mov dword ptr [rsp - 8], r15d
+	cmp r15b, 10
+	jb [bb_41]
+	lea r15d, [r12 - 97]
+	mov r13d, 2
+	cmp r15b, 5
+	ja [bb_54]
+	add r12b, -87
+	mov r15d, r12d
+	mov dword ptr [rsp - 8], r15d
+[bb_41]:
+	movzx r12d, byte ptr [rsi + 16]
+	lea r15d, [r12 - 48]
+	cmp r15b, 10
+	jb [bb_44]
+	lea r15d, [r12 - 97]
+	mov r13d, 2
+	cmp r15b, 5
+	ja [bb_54]
+	add r12b, -87
+	mov r15d, r12d
+[bb_44]:
+	movzx r12d, byte ptr [rsi + 17]
+	lea r13d, [r12 - 48]
+	mov dword ptr [rsp - 12], r13d
+	cmp r13b, 10
+	jb [bb_47]
+	mov dword ptr [rsp - 20], r15d
+	lea r15d, [r12 - 97]
+	mov r13d, 2
+	cmp r15b, 5
+	ja [bb_54]
+	add r12b, -87
+	mov r15d, r12d
+	mov dword ptr [rsp - 12], r15d
+	mov r15d, dword ptr [rsp - 20]
+[bb_47]:
+	movzx r12d, byte ptr [rsi + 18]
+	lea r13d, [r12 - 48]
+	mov dword ptr [rsp - 16], r13d
+	cmp r13b, 10
+	jb [bb_50]
+	mov dword ptr [rsp - 20], r15d
+	lea r15d, [r12 - 97]
+	mov r13d, 2
+	cmp r15b, 5
+	ja [bb_54]
+	add r12b, -87
+	mov r15d, r12d
+	mov dword ptr [rsp - 16], r15d
+	mov r15d, dword ptr [rsp - 20]
+[bb_50]:
+	movzx r12d, byte ptr [rsi + 19]
+	lea esi, [r12 - 48]
+	cmp sil, 10
+	jb [bb_53]
+	lea esi, [r12 - 97]
+	mov r13d, 2
+	cmp sil, 5
+	ja [bb_54]
+	add r12b, -87
+	mov esi, r12d
+[bb_53]:
+	movzx ecx, cl
+	movzx edx, dl
+	shl ecx, 8
+	shl edx, 4
+	add rdx, rcx
+	movzx ecx, dil
+	add rcx, rdx
+	movzx edx, r8b
+	shl edx, 4
+	movzx edi, r9b
+	add rdi, rdx
+	shl ecx, 8
+	add rdi, rcx
+	movzx ecx, r10b
+	shl ecx, 4
+	movzx edx, r11b
+	add rdx, rcx
+	shl rdi, 8
+	add rdx, rdi
+	movzx ecx, bl
+	shl ecx, 4
+	movzx edi, bpl
+	add rdi, rcx
+	shl rdx, 8
+	add rdi, rdx
+	movzx ecx, r14b
+	shl ecx, 4
+	movzx edx, byte ptr [rsp - 4]
+	add rdx, rcx
+	shl rdi, 8
+	add rdx, rdi
+	movzx ecx, byte ptr [rsp - 8]
+	shl ecx, 4
+	movzx edi, r15b
+	add rdi, rcx
+	shl rdx, 8
+	add rdi, rdx
+	movzx ecx, byte ptr [rsp - 12]
+	shl ecx, 4
+	movzx edx, byte ptr [rsp - 16]
+	add rdx, rcx
+	shl rdi, 8
+	add rdx, rdi
+	shl rdx, 4
+	movzx ecx, sil
+	add rcx, rdx
+	mov qword ptr [rax + 8], rcx
+	mov r13, -1
+[bb_54]:
+	mov qword ptr [rax], r13
+	pop rbx
+	pop r12
+	pop r13
+	pop r14
+	pop r15
+	pop rbp
+	ret
+[bb_55]:
+	mov qword ptr [rax], 1
+	mov qword ptr [rax + 8], rdx
+	ret

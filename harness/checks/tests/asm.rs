@@ -1,7 +1,8 @@
 //! Assembly snapshots of the hot paths listed in docs/performance/hot-paths.md. Run by
 //! `just asm-snapshots` (not `just test`: it needs a release build and cargo-show-asm).
-//! A diff fails until reviewed with `cargo insta review`. Snapshots are per target, because
-//! assembly differs between architectures.
+//! A diff fails until reviewed with `cargo insta review`. Snapshots are for one canonical target
+//! (`x86_64` Linux, what CI runs) on every host: `cargo asm --lib` compiles without linking, so a
+//! Mac produces the same snapshot as CI.
 #![cfg(test)]
 
 use std::path::{Path, PathBuf};
@@ -39,10 +40,19 @@ fn core_package() -> String {
 #[test]
 fn hot_path_assembly_is_reviewed() {
     let package = core_package();
-    let target = format!("{}-{}", std::env::consts::ARCH, std::env::consts::OS);
+    let target = "x86_64-unknown-linux-gnu";
     for function in hot_paths() {
         let output = Command::new("cargo")
-            .args(["asm", "--lib", "-p", &package, "--simplify", &function])
+            .args([
+                "asm",
+                "--lib",
+                "-p",
+                &package,
+                "--target",
+                target,
+                "--simplify",
+                &function,
+            ])
             .current_dir(root())
             .output()
             .expect("cargo asm runs (mise install provides cargo-show-asm)");
@@ -57,7 +67,7 @@ fn hot_path_assembly_is_reviewed() {
             .map(|ch| if ch.is_alphanumeric() { ch } else { '_' })
             .collect();
         insta::with_settings!({
-            snapshot_suffix => target.clone(),
+            snapshot_suffix => target,
             filters => vec![
                 (r"\.?Lfunc_begin\d+", "[func_begin]"),
                 (r"\.?LBB\d+_(\d+)", "[bb_$1]"),

@@ -1,0 +1,13 @@
+---
+source: harness/checks/tests/asm.rs
+expression: asm
+---
+<demo_app_core::types::Page>::bounds:
+	mov eax, edi
+	cmp rdx, rax
+	cmovb rax, rdx
+	mov ecx, esi
+	add rcx, rax
+	cmp rdx, rcx
+	cmovae rdx, rcx
+	ret
