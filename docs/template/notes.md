@@ -13,12 +13,10 @@ Generated from the {{template_repo}} at {{template_version}}.
 
 ## Deviations from the spec
 
-- **AGENTS.md is a map into the okf bundle (human decision).** SPEC §10 says AGENTS.md is the
-  only place rules live. Instead it keeps the project-memory instructions (in okf's managed
-  block), a commands pointer and the rules nothing else enforces (hooks, protected files,
-  failing test first, finishing). Commands, debugging and failure handling moved to
-  conventions/agent-workflow, the okf how-to to conventions/project-memory, and the code rules
-  that lints and tests enforce to the concepts their messages point at.
+- **AGENTS.md is a map into the okf bundle (human decision).** It keeps the project-memory
+  instructions (in okf's managed block), a commands pointer, and every rule as a one-liner with a
+  link to the concept that holds the detail. Commands, debugging and failure handling moved to
+  conventions/agent-workflow and the okf how-to to conventions/project-memory.
 
 - **workz dropped (human decision, SPEC §13 item 4).** workz 0.11.0 ignores `[isolation] base_port`
   (ranges start at 3000), refuses `sync --isolated` in the main checkout, and keys allocations by
@@ -134,6 +132,9 @@ Generated from the {{template_repo}} at {{template_version}}.
   Ubuntu runners are VMs and allow it; inside Docker use `--security-opt seccomp=unconfined`.
 - `just bootstrap` only warns when Docker is missing: it is needed for `just up` and `just e2e`,
   not for building, hooks or the CI tiers.
+- **Local CI with act** (`just ci-local <job>`): caching behaves differently from GitHub,
+  artifacts go to local storage, and steps that call the GitHub API need
+  `-s GITHUB_TOKEN=...`. Logic stays in recipes, so a fix never goes in workflow YAML.
 - `just check` skips the "hooks installed" guard when `CI=true` (CI runners never run `hk install`).
 - **Justfile lint (added at the maintainer's request; SPEC says no shell lint).** Recipe bodies are
   bash, so `just lint-recipes` checks `just --fmt` layout and runs shellcheck (pinned in

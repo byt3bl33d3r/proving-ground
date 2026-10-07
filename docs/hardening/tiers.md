@@ -19,6 +19,15 @@ code_refs: [justfile]
 
 Every check writes `target/harness/<check>.json` with `check`, `ok`, `summary`, `details_path`
 and `repro`. Coverage: region coverage must stay at least `COV_MIN_REGIONS` (mise.toml);
-`just cov-ratchet` raises it, nothing lowers it. Details: [panic audit](/hardening/panic-audit.md),
-[Kani](/hardening/kani.md), [fuzzing](/hardening/fuzzing.md), [sanitizers](/hardening/sanitizers.md),
-[benchmarks](/performance/benchmarks.md).
+`just cov-ratchet` raises it, nothing lowers it.
+
+- **Mutation testing** (`just mutants`, tier 3) runs cargo-mutants on core with nextest and lists
+  surviving mutants in `target/harness/mutants.json`; a survivor is a missing test.
+- **Release** (`just release`, tier 4) diffs each library crate's public API against the latest
+  tag (`BASE=<ref>` to change it). Removed or changed items fail unless `ALLOW_BREAKING=1`, which
+  the PR must explain.
+
+Details: [panic audit](/hardening/panic-audit.md), [Kani](/hardening/kani.md),
+[Miri](/hardening/miri.md), [fuzzing](/hardening/fuzzing.md), [sanitizers](/hardening/sanitizers.md),
+[benchmarks](/performance/benchmarks.md). Where each tier runs: [CI workflows](/workflows/ci.md)
+and [git hooks](/workflows/git-hooks.md).

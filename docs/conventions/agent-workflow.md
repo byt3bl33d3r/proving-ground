@@ -29,6 +29,8 @@ disagree. Recall and record knowledge as described in [project memory](/conventi
 
 `just --list` shows every recipe. What each tier runs and where: [check tiers](/hardening/tiers.md).
 Each worktree gets its own ports and stack: [port allocation](/architecture/port-allocation.md).
+Setup and the stack lifecycle: [setup and worktrees](/workflows/setup.md); what runs on commit and
+push: [git hooks](/workflows/git-hooks.md); CI: [CI workflows](/workflows/ci.md).
 
 ## Seeing what the app does
 

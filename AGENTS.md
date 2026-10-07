@@ -25,6 +25,7 @@ details in docs/architecture/overview.md.
 Run `just` recipes, not raw cargo. `just check` is tier 0 (also on commit), `just ci` is tier 1
 (what CI runs), `just up` and `just down` start and stop this worktree's stack and server, and
 `just --list` shows the rest. Commands, debugging and failures: docs/conventions/agent-workflow.md.
+Setup, worktrees, git hooks, CI and template upgrades: docs/workflows/.
 A failing check writes target/harness/<check>.json with a repro command: read it first.
 
 ## Rules
@@ -33,10 +34,21 @@ A failing check writes target/harness/<check>.json with a repro command: read it
   .config/nextest.toml, COV_MIN_REGIONS in mise.toml, docs/observability/budgets.md,
   docs/generated/lint-exceptions.txt, docs/generated/panic-allowlist.txt, harness/lints/,
   harness/checks/tests/arch.rs. Never lower a threshold or baseline to make a check pass.
-- Every bug fix adds a failing test first.
-- Lints, hooks and tests enforce the code rules (tracing with constant messages, time and
-  randomness through core::platform, no unwrap, typed errors, file size). Their messages name the
-  rule and the fix; follow them rather than silencing them.
+- Every bug fix adds a failing test first (unit, snapshot, DST seed or fuzz regression).
+- Logging: tracing only, constant messages, data in fields (docs/observability/fields.md).
+- Time, randomness, HashMap: only via core::platform (docs/testing/determinism.md). Async tests
+  use `#[tokio::test(start_paused = true)]` with `TokioClock` and `SeededRng`.
+- Environment and config only through runtime::config; user-facing CLI output only through cli::output.
+- No unwrap, expect or panic outside tests. Exceptions: `#[expect(lint, reason = "...")]` on the
+  smallest item, never `#[allow]`; then `just docs` records it (docs/conventions/lints.md).
+- Errors are typed; CLI exit codes are fixed (docs/conventions/errors.md).
+- Files stay under 500 lines and main.rs under 80 (docs/conventions/modules.md).
+- Integration test files start with `#![cfg(test)]`; every assert has a message (docs/testing/strategy.md).
+- A new failure mode in the domain gets a `buggify!` site, so `just dst` explores it (docs/testing/dst.md).
+- Perf claims need Gungraun numbers, not wall-clock alone (docs/performance/benchmarks.md). A new
+  hot function goes in docs/performance/hot-paths.md (asm snapshot and benchmark).
+- Lints, hooks and tests enforce most of these; their messages name the rule and the fix. Follow
+  them rather than silencing them.
 
 ## Before you finish
 Run `just check`, then commit through the hooks. Never push without being asked.

@@ -4,3 +4,5 @@
 * **Update**: template/notes records the justfile lint, the knowledge hook on every commit, agents starting tools through mise x, and the template repository's own hook file; hardening/tiers lists the justfile lint in tier 0.
 * **Update**: Added conventions/agent-workflow and conventions/project-memory, moving the commands, failure handling and okf how-to out of AGENTS.md; the seams, failing-test-first, Gungraun-numbers and no-unwrap rules now live in architecture/overview, testing/strategy, performance/benchmarks and conventions/lints.
 * **Update**: template/notes records the AGENTS.md map decision and the okf AGENTS.md lint in `just knowledge`; conventions/project-memory mentions the lint.
+* **Update**: template/notes: AGENTS.md keeps every rule as a one-liner linking to its concept (human decision).
+* **Creation**: Added the workflows section (setup and worktrees, git hooks, CI workflows, upgrading from the template) and hardening/miri; tiers documents mutation testing and the release tier; template/notes records the act gaps.
