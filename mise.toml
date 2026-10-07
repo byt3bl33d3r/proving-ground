@@ -54,6 +54,6 @@ OTEL_SERVICE_NAME = "demo-app"
 # The only nightly analysis recipes use (`cargo +$NIGHTLY ...`); nothing else uses nightly.
 NIGHTLY = "nightly-2026-10-07"
 # Coverage gate (region %). Protected: never lower it; `just cov-ratchet` raises it.
-COV_MIN_REGIONS = "0"
+COV_MIN_REGIONS = "70.4"
 # Share compiled dependencies between worktrees (each worktree keeps its own target/).
 RUSTC_WRAPPER = "sccache"

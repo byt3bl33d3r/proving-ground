@@ -1,0 +1,5 @@
+# cargo-mutants (`just mutants`, tier 3). Code that ordinary test builds never compile cannot be
+# killed by tests: Kani proofs (cfg(kani)) and the simulation-only buggify state (feature `sim`,
+# exercised by harness/dst). Debug impls only format.
+exclude_globs = ["crates/*-core/src/proofs.rs"]
+exclude_re = ["sim::", "impl std::fmt::Debug"]

@@ -335,6 +335,52 @@ mod tests {
     }
 
     #[test]
+    fn values_serialize_as_strings_and_numbers() {
+        let item = Item {
+            id: ItemId::from_bits(1),
+            name: ItemName::new("pen").expect("valid"),
+            created_at_ms: Timestamp::from_millis(5),
+        };
+        let json = serde_json::to_value(&item).expect("serialize");
+        assert_eq!(
+            json,
+            serde_json::json!({ "id": "itm_0000000000000001", "name": "pen", "created_at_ms": 5 }),
+            "wire shape"
+        );
+        assert_eq!(
+            serde_json::from_value::<Item>(json).ok(),
+            Some(item),
+            "round trip"
+        );
+    }
+
+    #[test]
+    fn error_codes_are_stable() {
+        assert_eq!(
+            ItemError::Validation(ValidationError::EmptyName).code(),
+            "validation_error",
+            "validation"
+        );
+        assert_eq!(
+            ItemError::NotFound(ItemId::from_bits(0)).code(),
+            "not_found",
+            "not found"
+        );
+        assert_eq!(ItemError::Unavailable.code(), "unavailable", "unavailable");
+    }
+
+    #[test]
+    fn page_keeps_offset_and_limit() {
+        let page = Page::new(Some(7), Some(3)).expect("valid");
+        assert_eq!((page.offset(), page.limit()), (7, 3), "accessors");
+        assert_eq!(
+            Page::new(None, None).map(Page::offset),
+            Ok(0),
+            "default offset"
+        );
+    }
+
+    #[test]
     fn page_rejects_out_of_range_limits() {
         assert!(Page::new(None, Some(0)).is_err(), "zero limit");
         assert!(

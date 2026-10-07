@@ -69,6 +69,25 @@ pub mod net {
 mod tests {
     use super::*;
 
+    #[cfg_attr(miri, ignore = "reads the real clock, which Miri isolation forbids")]
+    #[test]
+    fn system_sources_move() {
+        let clock = SystemClock::new();
+        let rng = SystemRng;
+        assert!(
+            clock.now().as_millis() > 1_600_000_000_000,
+            "wall clock is after 2020"
+        );
+        let samples: Vec<u64> = (0..4).map(|_| rng.next_u64()).collect();
+        assert!(
+            samples.windows(2).any(|pair| pair[0] != pair[1]),
+            "random values vary: {samples:?}"
+        );
+        let start = clock.monotonic();
+        while clock.monotonic() == start {}
+        assert!(clock.monotonic() > start, "monotonic time advances");
+    }
+
     #[test]
     fn seeded_rng_is_reproducible() {
         let first = SeededRng::new(7);

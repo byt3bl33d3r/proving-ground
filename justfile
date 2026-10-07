@@ -213,7 +213,7 @@ nightly:
 # ── Hardening (tier 1-3 building blocks; each writes target/harness/<check>.json via `gates`) ──
 
 # Coverage gate: workspace region coverage must stay >= COV_MIN_REGIONS (mise.toml)
-cov:
+coverage:
     #!/usr/bin/env bash
     set -uo pipefail
     mkdir -p target/harness
@@ -222,11 +222,11 @@ cov:
     pct=$(jq '.data[0].totals.regions.percent' target/harness/cov.json)
     ok=$(jq -n --argjson p "$pct" --argjson m "${COV_MIN_REGIONS:-0}" '$p >= $m')
     jq -n --argjson ok "$ok" --arg pct "$pct" --arg min "${COV_MIN_REGIONS:-0}" \
-      '{check: "cov", ok: $ok, summary: "region coverage \($pct)% (minimum \($min)%)", details_path: "target/harness/cov-missing.txt", repro: "just cov"}' > target/harness/cov-summary.json
+      '{check: "coverage", ok: $ok, summary: "region coverage \($pct)% (minimum \($min)%)", details_path: "target/harness/cov-missing.txt", repro: "just coverage"}' > target/harness/coverage.json
     [ "$ok" = true ] || { echo "Region coverage $pct% is below COV_MIN_REGIONS=${COV_MIN_REGIONS:-0}%. Add tests for the lines in target/harness/cov-missing.txt; never lower the threshold." >&2; exit 1; }
 
 # Raise COV_MIN_REGIONS to the measured coverage minus 0.5 (never lowers it)
-cov-ratchet: cov
+cov-ratchet: coverage
     #!/usr/bin/env bash
     set -euo pipefail
     new=$(jq '.data[0].totals.regions.percent - 0.5 | . * 10 | floor / 10' target/harness/cov.json)
@@ -301,9 +301,144 @@ docs:
 dylint:
     RUSTC_WRAPPER= DYLINT_RUSTFLAGS="-D warnings" cargo dylint --all -- --all-targets
 
+# ── Tiers ─────────────────────────────────────────────────────────────────────────────────
+
+# Tier 1: everything CI runs on a pull request
+ci:
+    just gates fmt-check clippy test machete hk-all deny dylint coverage panic-audit asm-snapshots gungraun miri kani dst
+
 # Pre-push subset of tier 1 (see hk.pkl)
 ci-fast:
-    just gates deny
+    just gates deny dylint arch coverage asm-snapshots gungraun
+
+# Tier 2: performance signals (remarks, llvm-mca, Criterion, llvm-lines, build timings). Never fails.
+perf:
+    -just gates remarks mca criterion llvm-lines timings
+    jq -s '{check: "perf", informational: true, signals: .}' target/harness/remarks.json target/harness/mca.json target/harness/criterion.json target/harness/llvm-lines.json target/harness/timings.json | tee target/harness/perf.json
+
+# Tier 3: tier 1 plus fuzzing, sanitizers, full Kani, DST at volume, mutation testing.
+# Budgets: FUZZ_SECS (default 600 per target), DST_SEEDS (default 100000).
+harden:
+    just ci
+    FUZZ_SECS="${FUZZ_SECS:-600}" just gates fuzz-all asan tsan kani-full dst-volume mutants
+
+# Tier 4: release checks (public API diff against the last tag)
+release:
+    just gates public-api
+
+# All hk steps on every file (catches commits made with hooks bypassed)
+hk-all:
+    hk check --all
+
+# Architecture tests only
+arch:
+    cargo nextest run --locked -p checks -E 'binary(arch)'
+
+# DST at nightly volume: DST_SEEDS seeds (default 100000) from DST_START
+dst-volume:
+    just dst SEEDS="${DST_SEEDS:-100000}" START="${DST_START:-0}"
+
+# Instruction counts (Gungraun, Linux + Valgrind). `just gungraun base` saves a baseline;
+# `just gungraun "" base` compares against it. Fails (exit 3) on a >2% instruction regression.
+gungraun save="" baseline="":
+    #!/usr/bin/env bash
+    set -euo pipefail
+    mkdir -p target/harness
+    if [ "$(uname -s)" != Linux ] || ! command -v valgrind >/dev/null; then
+      jq -n '{check: "gungraun", ok: true, summary: "skipped: gungraun needs Valgrind (Linux)", details_path: null, repro: "just gungraun"}' > target/harness/gungraun.json
+      echo "skipped: gungraun needs Valgrind (Linux)"; exit 0
+    fi
+    args=()
+    [ -n "{{save}}" ] && args+=(--save-baseline="{{save}}")
+    [ -n "{{baseline}}" ] && args+=(--baseline="{{baseline}}")
+    cargo bench --locked -p "{{project}}-core" --bench instructions -- ${args[@]+"${args[@]}"}
+
+# Host target triple, for sanitizer builds
+[private]
+host:
+    rustc -vV | sed -n 's/^host: //p'
+
+# AddressSanitizer on core and server tests (stable gnuasan target on x86_64 Linux, nightly elsewhere)
+asan: nightly
+    #!/usr/bin/env bash
+    set -euo pipefail
+    host=$(just host)
+    if [ "$host" = x86_64-unknown-linux-gnu ]; then
+      rustup target add x86_64-unknown-linux-gnuasan >&2
+      RUSTC_WRAPPER= CARGO_TARGET_DIR=target/asan cargo nextest run --locked --target x86_64-unknown-linux-gnuasan -p "{{project}}-core" -p "{{project}}-server"
+    else
+      RUSTC_WRAPPER= CARGO_TARGET_DIR=target/asan RUSTFLAGS=-Zsanitizer=address \
+        cargo +"$NIGHTLY" nextest run --locked --target "$host" -p "{{project}}-core" -p "{{project}}-server"
+    fi
+
+# ThreadSanitizer on core and server tests (nightly, rebuilds std)
+tsan: nightly
+    RUSTC_WRAPPER= CARGO_TARGET_DIR=target/tsan RUSTFLAGS=-Zsanitizer=thread \
+      cargo +"$NIGHTLY" nextest run --locked -Zbuild-std --target "$(just host)" -p "{{project}}-core" -p "{{project}}-server"
+
+# Mutation testing on core; surviving mutants are listed in target/harness/mutants.json
+mutants:
+    #!/usr/bin/env bash
+    set -uo pipefail
+    mkdir -p target/harness
+    cargo mutants --package "{{project}}-core" --test-tool nextest --output target/harness --no-shuffle >&2; status=$?
+    jq '{check: "mutants", ok: ([.outcomes[] | select(.summary == "MissedMutant")] | length == 0), survivors: [.outcomes[] | select(.summary == "MissedMutant") | .scenario.Mutant | "\(.file):\(.span.start.line) \(.name // .function.function_name // "")"], summary: "\([.outcomes[] | select(.summary == "MissedMutant")] | length) surviving mutant(s)", details_path: "target/harness/mutants.out", repro: "just mutants"}' \
+      target/harness/mutants.out/outcomes.json > target/harness/mutants.json
+    [ "$status" = 3 ] && status=0   # 3 = some mutants timed out, which means the tests caught them
+    exit "$status"
+
+# Public API of each library crate, diffed against BASE (default: the latest tag). Breaking
+# changes fail unless ALLOW_BREAKING=1 (say so in the PR).
+public-api: nightly
+    #!/usr/bin/env bash
+    set -euo pipefail
+    mkdir -p target/harness/public-api
+    base="${BASE:-$(git describe --tags --abbrev=0 2>/dev/null || true)}"
+    [ -n "$base" ] || { echo "No tag to diff against; set BASE=<ref>" >&2; exit 1; }
+    deny=(--deny=removed --deny=changed); [ "${ALLOW_BREAKING:-0}" = 1 ] && deny=()
+    for crate in core runtime server cli; do
+      cargo +"$NIGHTLY" public-api -p "{{project}}-$crate" diff ${deny[@]+"${deny[@]}"} "$base..HEAD" | tee "target/harness/public-api/$crate.txt"
+    done
+
+# Optimization remarks (inlining, vectorization) for core, one JSON object per remark
+remarks: nightly
+    #!/usr/bin/env bash
+    set -euo pipefail
+    rm -rf target/harness/remarks && mkdir -p target/harness/remarks
+    cargo +"$NIGHTLY" clean -q --release -p "{{project}}-core" --target-dir target/remarks   # remarks are emitted only when core compiles
+    RUSTC_WRAPPER= CARGO_TARGET_DIR=target/remarks RUSTFLAGS="-Cremark=loop-vectorize -Cremark=inline -Zremark-dir=$PWD/target/harness/remarks -Cdebuginfo=1" \
+      cargo +"$NIGHTLY" build --locked --release -p "{{project}}-core" >&2
+    cat target/harness/remarks/*.yaml 2>/dev/null | awk -v root="^(crates/|$PWD/crates/)" '
+      /^--- !/ { if (file ~ root) printf "{\"file\":\"%s\",\"line\":%d,\"pass\":\"%s\",\"name\":\"%s\",\"function\":\"%s\"}\n", file, line, pass, name, fn; file=""; line=0 }
+      /^Pass:/ { pass=$2 } /^Name:/ { name=$2 } /^Function:/ { fn=$2 }
+      /^DebugLoc:/ { match($0, /File: [^,]*/); file=substr($0, RSTART+6, RLENGTH-6); gsub(/\x27/, "", file); wrapped=1 }
+      wrapped && /Line: [0-9]+/ { match($0, /Line: [0-9]+/); line=substr($0, RSTART+6, RLENGTH-6); wrapped=0 }
+      END { if (file ~ root) printf "{\"file\":\"%s\",\"line\":%d,\"pass\":\"%s\",\"name\":\"%s\",\"function\":\"%s\"}\n", file, line, pass, name, fn }' \
+      > target/harness/remarks.jsonl
+    echo "$(wc -l < target/harness/remarks.jsonl) remarks for workspace code in target/harness/remarks.jsonl"
+
+# llvm-mca throughput report for each hot path (needs llvm-mca on PATH; skipped otherwise)
+mca:
+    #!/usr/bin/env bash
+    set -uo pipefail
+    mkdir -p target/harness/mca
+    for dir in /opt/homebrew/opt/llvm/bin /usr/local/opt/llvm/bin /usr/lib/llvm-*/bin; do [ -x "$dir/llvm-mca" ] && PATH="$PATH:$dir"; done
+    command -v llvm-mca >/dev/null || { echo "skipped: llvm-mca not found (it ships with LLVM, not rustup)"; exit 0; }
+    awk '/^```text hot-paths/{f=1; next} /^```/{f=0} f && NF' docs/performance/hot-paths.md | while IFS= read -r fn; do
+      cargo asm --lib -p "{{project}}-core" --mca "$fn" > "target/harness/mca/$(tr -c 'A-Za-z0-9\n' _ <<<"$fn").txt" 2>&1
+    done
+
+# Wall-clock benchmarks (Criterion; informational)
+criterion:
+    cargo bench --locked -p "{{project}}-core" --bench wall_clock -- --noplot
+
+# Top 30 functions by generated LLVM IR lines in core (compile-time signal)
+llvm-lines:
+    cargo llvm-lines --release -p "{{project}}-core" | head -n 32 | tee target/harness/llvm-lines.txt
+
+# Build timings report (target/cargo-timings/cargo-timing.html)
+timings:
+    cargo build --locked --release --timings -p "{{project}}-server"
 
 # All cargo-deny checks (advisories need the network)
 deny:
