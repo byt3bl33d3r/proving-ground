@@ -1,5 +1,7 @@
 # Every #[expect(...)] in the workspace (protected; regenerate with `just docs` after review).
 crates/demo-app-cli/src/output.rs: clippy::print_stdout, clippy::print_stderr, clippy::disallowed_macros -- cli::output is the single place allowed to print
+crates/demo-app-core/benches/instructions.rs: missing_docs, unused_qualifications, clippy::exit, clippy::disallowed_macros -- expanded from gungraun's macros (main! exits with the benchmark status)
 crates/demo-app-core/src/platform/system.rs: clippy::disallowed_methods, clippy::disallowed_types -- core::platform is the single place that wraps real time, sleep and std hash maps
 harness/checks/tests/arch.rs: clippy::disallowed_methods -- test-only switch used by `just docs`
+harness/dst/tests/dst.rs: clippy::disallowed_methods -- DST seeds come from the `just dst` recipe
 harness/lints/src/lib.rs: clippy::no_mangle_with_rust_abi -- dylint's registration entry point

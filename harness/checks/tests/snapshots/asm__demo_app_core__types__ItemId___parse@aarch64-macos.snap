@@ -1,0 +1,205 @@
+---
+source: harness/checks/tests/asm.rs
+expression: asm
+---
+<demo_app_core::types::ItemId>::parse:
+[func_begin]:
+	subs x9, x1, #4
+	b.lo [bb_2]
+	ldr w10, [x0]
+	mov w11, #29801
+	movk w11, #24429, lsl #16
+	cmp w10, w11
+	b.eq [bb_3]
+[bb_2]:
+	str xzr, [x8]
+	ret
+[bb_3]:
+	cmp x9, #16
+	b.ne [bb_53]
+	ldrb w10, [x0, #4]
+	sub w9, w10, #48
+	cmp w9, #10
+	b.lo [bb_7]
+	sub w9, w10, #97
+	cmp w9, #5
+	b.hi [bb_54]
+	sub w9, w10, #87
+[bb_7]:
+	ldrb w11, [x0, #5]
+	sub w10, w11, #48
+	cmp w10, #10
+	b.lo [bb_10]
+	sub w10, w11, #97
+	cmp w10, #5
+	b.hi [bb_54]
+	sub w10, w11, #87
+[bb_10]:
+	ldrb w12, [x0, #6]
+	sub w11, w12, #48
+	cmp w11, #10
+	b.lo [bb_13]
+	sub w11, w12, #97
+	cmp w11, #5
+	b.hi [bb_54]
+	sub w11, w12, #87
+[bb_13]:
+	ldrb w13, [x0, #7]
+	sub w12, w13, #48
+	cmp w12, #10
+	b.lo [bb_16]
+	sub w12, w13, #97
+	cmp w12, #5
+	b.hi [bb_54]
+	sub w12, w13, #87
+[bb_16]:
+	ldrb w14, [x0, #8]
+	sub w13, w14, #48
+	cmp w13, #10
+	b.lo [bb_19]
+	sub w13, w14, #97
+	cmp w13, #5
+	b.hi [bb_54]
+	sub w13, w14, #87
+[bb_19]:
+	ldrb w15, [x0, #9]
+	sub w14, w15, #48
+	cmp w14, #10
+	b.lo [bb_22]
+	sub w14, w15, #97
+	cmp w14, #5
+	b.hi [bb_54]
+	sub w14, w15, #87
+[bb_22]:
+	ldrb w16, [x0, #10]
+	sub w15, w16, #48
+	cmp w15, #10
+	b.lo [bb_25]
+	sub w15, w16, #97
+	cmp w15, #5
+	b.hi [bb_54]
+	sub w15, w16, #87
+[bb_25]:
+	ldrb w17, [x0, #11]
+	sub w16, w17, #48
+	cmp w16, #10
+	b.lo [bb_28]
+	sub w16, w17, #97
+	cmp w16, #5
+	b.hi [bb_54]
+	sub w16, w17, #87
+[bb_28]:
+	ldrb w1, [x0, #12]
+	sub w17, w1, #48
+	cmp w17, #10
+	b.lo [bb_31]
+	sub w17, w1, #97
+	cmp w17, #5
+	b.hi [bb_54]
+	sub w17, w1, #87
+[bb_31]:
+	ldrb w2, [x0, #13]
+	sub w1, w2, #48
+	cmp w1, #10
+	b.lo [bb_34]
+	sub w1, w2, #97
+	cmp w1, #5
+	b.hi [bb_54]
+	sub w1, w2, #87
+[bb_34]:
+	ldrb w3, [x0, #14]
+	sub w2, w3, #48
+	cmp w2, #10
+	b.lo [bb_37]
+	sub w2, w3, #97
+	cmp w2, #5
+	b.hi [bb_54]
+	sub w2, w3, #87
+[bb_37]:
+	ldrb w4, [x0, #15]
+	sub w3, w4, #48
+	cmp w3, #10
+	b.lo [bb_40]
+	sub w3, w4, #97
+	cmp w3, #5
+	b.hi [bb_54]
+	sub w3, w4, #87
+[bb_40]:
+	ldrb w5, [x0, #16]
+	sub w4, w5, #48
+	cmp w4, #10
+	b.lo [bb_43]
+	sub w4, w5, #97
+	cmp w4, #5
+	b.hi [bb_54]
+	sub w4, w5, #87
+[bb_43]:
+	ldrb w6, [x0, #17]
+	sub w5, w6, #48
+	cmp w5, #10
+	b.lo [bb_46]
+	sub w5, w6, #97
+	cmp w5, #5
+	b.hi [bb_54]
+	sub w5, w6, #87
+[bb_46]:
+	ldrb w7, [x0, #18]
+	sub w6, w7, #48
+	cmp w6, #10
+	b.lo [bb_49]
+	sub w6, w7, #97
+	cmp w6, #5
+	b.hi [bb_54]
+	sub w6, w7, #87
+[bb_49]:
+	ldrb w7, [x0, #19]
+	sub w0, w7, #48
+	cmp w0, #10
+	b.lo [bb_52]
+	sub w0, w7, #97
+	cmp w0, #5
+	b.hi [bb_54]
+	sub w0, w7, #87
+[bb_52]:
+	and x9, x9, #0xff
+	and x10, x10, #0xff
+	lsl x9, x9, #8
+	add x9, x9, x10, lsl #4
+	add x9, x9, w11, uxtb
+	and x10, x12, #0xff
+	lsl x9, x9, #8
+	add x9, x9, x10, lsl #4
+	add x9, x9, w13, uxtb
+	and x10, x14, #0xff
+	lsl x9, x9, #8
+	add x9, x9, x10, lsl #4
+	add x9, x9, w15, uxtb
+	and x10, x16, #0xff
+	lsl x9, x9, #8
+	add x9, x9, x10, lsl #4
+	add x9, x9, w17, uxtb
+	and x10, x1, #0xff
+	lsl x9, x9, #8
+	add x9, x9, x10, lsl #4
+	add x9, x9, w2, uxtb
+	and x10, x3, #0xff
+	lsl x9, x9, #8
+	add x9, x9, x10, lsl #4
+	add x9, x9, w4, uxtb
+	and x10, x5, #0xff
+	lsl x9, x9, #8
+	add x9, x9, x10, lsl #4
+	add x9, x9, w6, uxtb
+	lsl x9, x9, #4
+	add x10, x9, w0, uxtb
+	mov x9, #-1
+	stp x9, x10, [x8]
+	ret
+[bb_53]:
+	mov w10, #1
+	stp x10, x9, [x8]
+	ret
+[bb_54]:
+	mov w9, #2
+	str x9, [x8]
+	ret

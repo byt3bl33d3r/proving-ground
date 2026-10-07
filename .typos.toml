@@ -1,0 +1,3 @@
+# typos (spell checker, run by the hk `typos` step)
+[files]
+extend-exclude = ["harness/fuzz/corpus", "harness/fuzz/artifacts", "**/snapshots/*.snap", "*.jsonl"]

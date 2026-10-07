@@ -167,6 +167,10 @@ mod tests {
         )
     }
 
+    #[cfg_attr(
+        all(miri, not(target_os = "linux")),
+        ignore = "tokio needs kqueue, which Miri lacks off Linux"
+    )]
     #[tokio::test(start_paused = true)]
     async fn create_get_list_delete() {
         let items = service();
@@ -187,6 +191,10 @@ mod tests {
         );
     }
 
+    #[cfg_attr(
+        all(miri, not(target_os = "linux")),
+        ignore = "tokio needs kqueue, which Miri lacks off Linux"
+    )]
     #[tokio::test(start_paused = true)]
     async fn rejects_invalid_input() {
         let items = service();
@@ -208,6 +216,10 @@ mod tests {
         );
     }
 
+    #[cfg_attr(
+        all(miri, not(target_os = "linux")),
+        ignore = "tokio needs kqueue, which Miri lacks off Linux"
+    )]
     #[tokio::test(start_paused = true)]
     async fn list_paginates_in_id_order() {
         let items = service();

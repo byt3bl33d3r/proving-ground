@@ -80,6 +80,10 @@ mod tests {
         );
     }
 
+    #[cfg_attr(
+        all(miri, not(target_os = "linux")),
+        ignore = "tokio needs kqueue, which Miri lacks off Linux"
+    )]
     #[tokio::test(start_paused = true)]
     async fn tokio_clock_follows_paused_time() {
         let clock = TokioClock::new(Timestamp::from_millis(1_000));

@@ -23,11 +23,23 @@ tracing.workspace = true
 turmoil = { workspace = true, optional = true }
 
 [dev-dependencies]
+criterion.workspace = true
+gungraun.workspace = true
 insta.workspace = true
 proptest.workspace = true
 serde_json.workspace = true
 tokio = { workspace = true, features = ["macros", "rt", "test-util"] }
 tracing-subscriber.workspace = true
+
+# Instruction counts (Gungraun, Linux + Valgrind): `just gungraun`. Gates on >2% regressions.
+[[bench]]
+name = "instructions"
+harness = false
+
+# Wall clock (Criterion): `just perf`. Informational only.
+[[bench]]
+name = "wall_clock"
+harness = false
 
 [lints]
 workspace = true

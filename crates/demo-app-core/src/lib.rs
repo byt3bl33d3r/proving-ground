@@ -8,5 +8,7 @@
 pub mod domain;
 pub mod fields;
 pub mod platform;
+#[cfg(kani)]
+mod proofs;
 pub mod repo;
 pub mod types;

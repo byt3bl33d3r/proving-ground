@@ -26,7 +26,9 @@ impl ItemId {
         Self(bits)
     }
 
-    /// Parses the textual form. Never panics, whatever the input.
+    /// Parses the textual form. Never panics, whatever the input. Hot path: kept out of line so
+    /// its assembly is snapshotted (docs/performance/hot-paths.md).
+    #[inline(never)]
     pub fn parse(input: &str) -> Result<Self, ParseIdError> {
         let hex = input
             .strip_prefix(ITEM_ID_PREFIX)
@@ -85,7 +87,8 @@ pub enum ParseIdError {
     InvalidDigit,
 }
 
-/// Item name: trimmed, 1 to 64 characters, no control characters.
+/// Item name: trimmed of ASCII whitespace, 1 to 64 characters, no control characters.
+/// (ASCII trimming keeps the Kani proof of this invariant fast; see docs/hardening/kani.md.)
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(try_from = "String", into = "String")]
 pub struct ItemName(String);
@@ -93,11 +96,11 @@ pub struct ItemName(String);
 impl ItemName {
     /// Validates and trims `raw`.
     pub fn new(raw: &str) -> Result<Self, ValidationError> {
-        let trimmed = raw.trim();
+        let trimmed = raw.trim_ascii();
         if trimmed.is_empty() {
             return Err(ValidationError::EmptyName);
         }
-        if trimmed.chars().nth(ITEM_NAME_MAX_CHARS).is_some() {
+        if trimmed.chars().take(ITEM_NAME_MAX_CHARS + 1).count() > ITEM_NAME_MAX_CHARS {
             return Err(ValidationError::NameTooLong {
                 max: ITEM_NAME_MAX_CHARS,
             });
@@ -198,7 +201,8 @@ impl Page {
     }
 
     /// The `start..end` slice bounds for a collection of `len` items. Never overflows and
-    /// always satisfies `start <= end <= len`.
+    /// always satisfies `start <= end <= len`. Hot path (docs/performance/hot-paths.md).
+    #[inline(never)]
     pub fn bounds(self, len: usize) -> (usize, usize) {
         let start = usize::try_from(self.offset).unwrap_or(usize::MAX).min(len);
         let limit = usize::try_from(self.limit).unwrap_or(usize::MAX);
@@ -345,6 +349,7 @@ mod tests {
     }
 
     proptest! {
+        #[cfg_attr(miri, ignore = "proptest persists failures to files")]
         #[test]
         fn parse_never_panics_and_round_trips(input in ".*", bits in any::<u64>()) {
             let _parsed: Result<ItemId, ParseIdError> = ItemId::parse(&input);
@@ -352,6 +357,7 @@ mod tests {
             prop_assert_eq!(ItemId::parse(&id.to_string()), Ok(id), "round trip");
         }
 
+        #[cfg_attr(miri, ignore = "proptest persists failures to files")]
         #[test]
         fn page_bounds_stay_in_range(offset in any::<u32>(), limit in 1..=MAX_PAGE_LIMIT, len in 0_usize..10_000) {
             let page = Page::new(Some(offset), Some(limit)).map_err(|e| TestCaseError::fail(e.to_string()))?;

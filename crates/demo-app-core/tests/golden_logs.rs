@@ -48,6 +48,10 @@ fn normalize(line: &str) -> Value {
     event
 }
 
+#[cfg_attr(
+    all(miri, not(target_os = "linux")),
+    ignore = "tokio needs kqueue, which Miri lacks off Linux"
+)]
 #[tokio::test(start_paused = true)]
 async fn domain_events_have_stable_shape() {
     let buffer = Buffer::default();

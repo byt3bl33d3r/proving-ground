@@ -141,7 +141,7 @@ clippy:
 
 # Unit, property, snapshot, transcript and architecture tests (not e2e)
 test *args:
-    cargo nextest run --workspace --locked --no-tests=warn -E 'not binary(e2e)' {{args}}
+    cargo nextest run --workspace --locked --no-tests=warn -E 'not binary(e2e) & not binary(asm)' {{args}}
 
 # Unused dependencies
 machete:
@@ -181,7 +181,7 @@ affected-tests *files:
       name=$(jq -r --arg m "$PWD/$dir/Cargo.toml" '.packages[] | select(.manifest_path == $m) | .name' <<<"$meta")
       [ -n "$name" ] && pkgs+=(-p "$name")
     done
-    if $all; then just test; elif [ ${#pkgs[@]} -gt 0 ]; then cargo nextest run --locked --no-tests=warn -E 'not binary(e2e)' "${pkgs[@]}"; fi
+    if $all; then just test; elif [ ${#pkgs[@]} -gt 0 ]; then cargo nextest run --locked --no-tests=warn -E 'not binary(e2e) & not binary(asm)' "${pkgs[@]}"; fi
 
 # Functions in core's release build that can panic, compared with docs/generated/panic-allowlist.txt
 # Uses $NIGHTLY with -Zcross-crate-inline-threshold=never: on stable, small functions are only
@@ -209,6 +209,88 @@ panic-audit: nightly
 [private]
 nightly:
     rustup toolchain list | grep -q "^$NIGHTLY" || rustup toolchain install "$NIGHTLY" --profile minimal -c rust-src,llvm-tools-preview,miri,clippy,rustfmt >&2
+
+# ── Hardening (tier 1-3 building blocks; each writes target/harness/<check>.json via `gates`) ──
+
+# Coverage gate: workspace region coverage must stay >= COV_MIN_REGIONS (mise.toml)
+cov:
+    #!/usr/bin/env bash
+    set -uo pipefail
+    mkdir -p target/harness
+    cargo llvm-cov nextest --workspace --locked --no-report -E 'not binary(e2e) & not binary(asm)' || exit $?
+    cargo llvm-cov report --json --output-path target/harness/cov.json --show-missing-lines > target/harness/cov-missing.txt
+    pct=$(jq '.data[0].totals.regions.percent' target/harness/cov.json)
+    ok=$(jq -n --argjson p "$pct" --argjson m "${COV_MIN_REGIONS:-0}" '$p >= $m')
+    jq -n --argjson ok "$ok" --arg pct "$pct" --arg min "${COV_MIN_REGIONS:-0}" \
+      '{check: "cov", ok: $ok, summary: "region coverage \($pct)% (minimum \($min)%)", details_path: "target/harness/cov-missing.txt", repro: "just cov"}' > target/harness/cov-summary.json
+    [ "$ok" = true ] || { echo "Region coverage $pct% is below COV_MIN_REGIONS=${COV_MIN_REGIONS:-0}%. Add tests for the lines in target/harness/cov-missing.txt; never lower the threshold." >&2; exit 1; }
+
+# Raise COV_MIN_REGIONS to the measured coverage minus 0.5 (never lowers it)
+cov-ratchet: cov
+    #!/usr/bin/env bash
+    set -euo pipefail
+    new=$(jq '.data[0].totals.regions.percent - 0.5 | . * 10 | floor / 10' target/harness/cov.json)
+    if jq -e -n --argjson n "$new" --argjson m "${COV_MIN_REGIONS:-0}" '$n > $m' >/dev/null; then
+      sed -i.bak "s/^COV_MIN_REGIONS = \".*\"/COV_MIN_REGIONS = \"$new\"/" mise.toml && rm -f mise.toml.bak
+      echo "{\"cov_min_regions\": $new}"
+    else
+      echo "{\"cov_min_regions\": ${COV_MIN_REGIONS:-0}, \"unchanged\": true}"
+    fi
+
+# Assembly snapshots of docs/performance/hot-paths.md (review diffs with `cargo insta review`)
+asm-snapshots:
+    INSTA_UPDATE=no cargo nextest run --locked -p checks -E 'binary(asm)'
+
+# Kani quick harnesses (quick_*) on core
+kani:
+    RUSTC_WRAPPER= cargo kani -p "{{project}}-core" --harness quick_
+
+# Every Kani harness on core, higher unwind bounds (tier 3)
+kani-full:
+    RUSTC_WRAPPER= cargo kani -p "{{project}}-core"
+
+# Miri on core's tests (strict provenance); tests that touch files or the network are ignored
+miri: nightly
+    RUSTC_WRAPPER= MIRIFLAGS=-Zmiri-strict-provenance PROPTEST_CASES=8 cargo +"$NIGHTLY" miri nextest run -p "{{project}}-core" --locked
+
+# Deterministic simulation (harness/dst). Args: SEED=<n> TEST=<name> SEEDS=<count> START=<first>
+# e.g. `just dst`, `just dst SEEDS=1000`, `just dst SEED=17 TEST=items_survive_faults`
+dst *args:
+    #!/usr/bin/env bash
+    set -uo pipefail
+    filter=()
+    for arg in {{args}}; do
+      case "$arg" in
+        SEED=*) export DST_SEED="${arg#SEED=}" ;;
+        SEEDS=*) export DST_SEEDS="${arg#SEEDS=}" ;;
+        START=*) export DST_START="${arg#START=}" ;;
+        TEST=*) filter=(-E "test(=${arg#TEST=})") ;;
+        *) echo "usage: just dst [SEED=<n>] [TEST=<name>] [SEEDS=<count>] [START=<first>]" >&2; exit 2 ;;
+      esac
+    done
+    cd harness/dst && cargo nextest run --locked --no-fail-fast ${filter[@]+"${filter[@]}"}
+
+# Fuzz one target (harness/fuzz) for `secs` seconds; crashes land in harness/fuzz/artifacts/
+fuzz target secs="60": nightly
+    #!/usr/bin/env bash
+    set -uo pipefail
+    RUSTC_WRAPPER= cargo +"$NIGHTLY" fuzz run --fuzz-dir harness/fuzz "{{target}}" -- -max_total_time="{{secs}}" -timeout=10 && exit 0
+    status=$?
+    crash=$(ls -t harness/fuzz/artifacts/{{target}}/* 2>/dev/null | head -1)
+    echo "Fuzz crash in {{target}}. Reproduce: just fuzz-repro {{target}} $crash  Minimize: just fuzz-tmin {{target}} $crash  Then save it as a regression test and fix it in the same PR." >&2
+    exit "$status"
+
+# Every fuzz target for FUZZ_SECS seconds each (default 600; tier 3)
+fuzz-all:
+    for target in $(RUSTC_WRAPPER= cargo +"$NIGHTLY" fuzz list --fuzz-dir harness/fuzz); do just fuzz "$target" "${FUZZ_SECS:-600}" || exit 1; done
+
+# Re-run one crashing input
+fuzz-repro target artifact: nightly
+    RUSTC_WRAPPER= cargo +"$NIGHTLY" fuzz run --fuzz-dir harness/fuzz "{{target}}" "{{artifact}}"
+
+# Minimize one crashing input
+fuzz-tmin target artifact: nightly
+    RUSTC_WRAPPER= cargo +"$NIGHTLY" fuzz tmin --fuzz-dir harness/fuzz "{{target}}" "{{artifact}}"
 
 # Regenerate docs/generated/ (crate graph, lint-exception ledger) from the source
 docs:
