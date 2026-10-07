@@ -265,6 +265,11 @@ dependencies = [
 [[package]]
 name = "checks"
 version = "0.1.0"
+dependencies = [
+ "demo-app-cli",
+ "demo-app-core",
+ "tokio",
+]
 
 [[package]]
 name = "clap"

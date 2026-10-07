@@ -10,5 +10,10 @@ publish.workspace = true
 
 [dependencies]
 
+[dev-dependencies]
+demo-app-cli.workspace = true
+demo-app-core.workspace = true
+tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
+
 [lints]
 workspace = true
