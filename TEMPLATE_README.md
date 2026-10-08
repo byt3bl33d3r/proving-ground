@@ -1,4 +1,4 @@
-# rust-project-template
+# proving-ground
 
 A [cargo-generate](https://github.com/cargo-generate/cargo-generate) template for a Rust service
 built to be worked on by coding agents (Claude Code, Codex): a layered workspace (core, runtime,
@@ -14,7 +14,7 @@ template repository; generation removes them.
 ## Generate a project
 
 ```bash
-cargo generate --path /path/to/rust-project-template --name my-service
+cargo generate --path /path/to/proving-ground --name my-service
 # later, once the repository is published:
 cargo generate --git <url> --tag v1.0.0 --name my-service
 ```

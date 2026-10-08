@@ -3,7 +3,7 @@ let name = variable::get("project-name");
 print(`
 Next steps:
   cd ${name}
-  git add -A && git commit -m "Initial commit from rust-project-template"
+  git add -A && git commit -m "Initial commit from proving-ground"
   mise trust && mise install
   just bootstrap      # lockfile, hk install, tool checks, first build
   just up             # per-worktree telemetry stack + server
