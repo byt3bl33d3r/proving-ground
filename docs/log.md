@@ -5,5 +5,6 @@
 * **Update**: Added conventions/agent-workflow and conventions/project-memory, moving the commands, failure handling and okf how-to out of AGENTS.md; the seams, failing-test-first, Gungraun-numbers and no-unwrap rules now live in architecture/overview, testing/strategy, performance/benchmarks and conventions/lints.
 * **Update**: template/notes records the AGENTS.md map decision and the okf AGENTS.md lint in `just knowledge`; conventions/project-memory mentions the lint.
 * **Update**: template/notes: AGENTS.md keeps every rule as a one-liner linking to its concept (human decision).
+* **Update**: agent-workflow names `just --show <recipe>` as the way to read a private recipe.
 * **Update**: Grouped the justfile menu and made its plumbing private; `logs`, `query`, `fuzz`, `fuzz-crash`, `kani [full]`, `deny [offline]` and `fmt [--check]` replace the one-flag variants and `status` carries the UI URLs; agent-workflow, errors, queries, telemetry, setup, fuzzing, kani and the template notes name the new recipes; a test in harness/checks verifies that every `just <recipe>` in docs/ exists.
 * **Creation**: Added the workflows section (setup and worktrees, git hooks, CI workflows, upgrading from the template) and hardening/miri; tiers documents mutation testing and the release tier; template/notes records the act gaps.

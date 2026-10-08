@@ -28,7 +28,8 @@ disagree. Recall and record knowledge as described in [project memory](/conventi
 | Validate project memory | `just knowledge` |
 
 `just --list` shows the menu by group; hooks and CI also call private recipes, which each check's
-`repro` names. What each tier runs and where: [check tiers](/hardening/tiers.md).
+`repro` names, and `just --show <recipe>` prints any recipe's source, private or not. What each
+tier runs and where: [check tiers](/hardening/tiers.md).
 Each worktree gets its own ports and stack: [port allocation](/architecture/port-allocation.md).
 Setup and the stack lifecycle: [setup and worktrees](/workflows/setup.md); what runs on commit and
 push: [git hooks](/workflows/git-hooks.md); CI: [CI workflows](/workflows/ci.md).
