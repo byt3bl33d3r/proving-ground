@@ -21,11 +21,11 @@ effort: retries are off and an unreachable endpoint costs one warning.
 
 | Signal | Backend | OTLP path | Query |
 | --- | --- | --- | --- |
-| Metrics | VictoriaMetrics | `/opentelemetry/v1/metrics` | PromQL, `just q-metrics` |
-| Logs | VictoriaLogs | `/insert/opentelemetry/v1/logs` | LogsQL, `just q-logs` |
-| Traces | VictoriaTraces | `/insert/opentelemetry/v1/traces` | LogsQL `just q-traces`, Jaeger `just trace` |
+| Metrics | VictoriaMetrics | `/opentelemetry/v1/metrics` | PromQL, `just query metrics` |
+| Logs | VictoriaLogs | `/insert/opentelemetry/v1/logs` | LogsQL, `just query logs` |
+| Traces | VictoriaTraces | `/insert/opentelemetry/v1/traces` | LogsQL `just query traces`, Jaeger `just trace` |
 
-The UIs are at `/vmui/` (metrics) and `/select/vmui/` (logs, traces); `just ui` prints them. The
+The UIs are at `/vmui/` (metrics) and `/select/vmui/` (logs, traces); `just status` prints them. The
 CLI logs to stderr (default level `warn`, `-v`/`-q` adjust it) and exports only with `--otel`.
 Field names follow [fields](/observability/fields.md); ready-made queries are in
 [queries](/observability/queries.md).

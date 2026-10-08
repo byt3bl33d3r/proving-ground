@@ -8,10 +8,10 @@ description: Reproduce, observe, fix and verify a bug or behaviour change in thi
 1. **Reproduce.** `just up` (prints the app URL). Trigger the behaviour with the CLI
    (`cargo run -p {{project-name}}-cli -- items ...`) or a failing test. Error bodies carry a `request_id`.
 2. **Observe** (aggregate, never dump):
-   - `just logs-errors`: recent WARN/ERROR from the local JSON log.
-   - `just logs-request <request_id>`: everything one request logged.
-   - `just q-logs '<LogsQL>'`, `just q-traces '<LogsQL>'`, `just trace <trace_id>`,
-     `just q-metrics '<PromQL>'`, or the Victoria MCP servers. Canned queries:
+   - `just logs`: recent WARN/ERROR from the local JSON log.
+   - `just logs <request_id>`: everything one request logged.
+   - `just query logs '<LogsQL>'`, `just query traces '<LogsQL>'`, `just trace <trace_id>`,
+     `just query metrics '<PromQL>'`, or the Victoria MCP servers. Canned queries:
      docs/observability/queries.md.
 3. **Write the failing test first**: unit/snapshot test, a trycmd transcript, an e2e test in
    harness/checks/tests/e2e.rs, a DST seed (`just dst SEED=<n> TEST=<name>`) or a fuzz regression.

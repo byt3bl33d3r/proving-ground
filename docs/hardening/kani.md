@@ -13,7 +13,7 @@ Harnesses live in `crates/<project>-core/src/proofs.rs` (`#[cfg(kani)]`).
 
 - `quick_*` (`just kani`, tier 1, seconds): id parsing never panics on short inputs, a validated
   `Page` keeps its limit in range, and pagination math never overflows.
-- `full_*` (`just kani-full`, tier 3): the hex-digit decoder behind `ItemId::parse` is exact for
+- `full_*` (`just kani full`, tier 3): the hex-digit decoder behind `ItemId::parse` is exact for
   all 256 bytes.
 
 Every run has a per-harness timeout (`--harness-timeout`, 2 minutes quick, 15 minutes full).

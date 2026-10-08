@@ -1,5 +1,5 @@
 //! Kani proof harnesses (compiled only by `cargo kani`). `quick_*` run in tier 1 (`just kani`),
-//! everything runs in tier 3 (`just kani-full`). See docs/hardening/kani.md.
+//! everything runs in tier 3 (`just kani full`). See docs/hardening/kani.md.
 
 use crate::types::{ItemId, MAX_PAGE_LIMIT, Page, hex_value};
 

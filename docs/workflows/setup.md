@@ -26,11 +26,10 @@ code_refs: [mise.toml, rust-toolchain.toml, justfile, harness/stack/compose.yaml
 | Recipe | Does |
 | --- | --- |
 | `just up` | Refuses ports owned by another process, starts this worktree's Victoria stack and waits for it, writes `.harness/stack.json` and `.harness/env`, builds and starts the server in the background, waits for `/readyz`, then prints the app URL, UI URLs and ports as JSON |
-| `just status` | JSON: stack health, server pid and readiness, ports |
+| `just status` | JSON: stack health, server pid and readiness, ports and the Victoria UI URLs |
 | `just restart` | Rebuilds and restarts only the server; the stack and its data stay |
 | `just down` | Stops the server, removes the stack and its volumes, deletes `.harness/` |
 | `just env` | The harness variables for a shell: `eval "$(just env)"` |
-| `just ui` | The Victoria web UIs, for humans |
 | `just mcp <kind>` | A Victoria MCP server for this worktree (the agents' MCP configs call it) |
 | `just harness-gc` | Removes stacks whose worktree directory no longer exists |
 

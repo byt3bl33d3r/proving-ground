@@ -12,7 +12,7 @@ code_refs: [crates/{{project-name}}-cli/src/error.rs, crates/{{project-name}}-se
 - Libraries use `thiserror` enums (`ItemError`, `ValidationError`, `RepoError`, `ConfigError`,
   `TelemetryError`); binaries use `anyhow` at the edge. `ItemError::code()` gives the stable code.
 - Every API error body is `{ "error": { "code", "message", "request_id" } }`. Agents grep logs by
-  `request_id` (`just logs-request <id>`).
+  `request_id` (`just logs <request_id>`).
 - The CLI never calls `std::process::exit` (clippy bans it): `main` returns `ExitCode`, and
   `CliError::exit_code` is the one mapping:
 

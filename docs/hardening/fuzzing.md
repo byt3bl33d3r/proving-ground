@@ -17,7 +17,8 @@ code_refs: [harness/fuzz/Cargo.toml, harness/fuzz/corpus]
 | `decode_create_item` | JSON request bodies decode safely; accepted names uphold the invariant |
 | `differential_core` | random operation sequences agree between `ItemService` and a `BTreeMap` model |
 
-`just fuzz <target> <secs>` (nightly runs each for 10 minutes). On a crash the recipe prints the
-repro and minimize commands (`just fuzz-repro`, `just fuzz-tmin`). Save the minimized input as a
-regression test and fix it in the same PR. Corpora live in `harness/fuzz/corpus/`; run
-`cargo fuzz cmin` before committing them. Part of [tier 3](/hardening/tiers.md).
+`just fuzz <target> <secs>` runs one target and `just fuzz` every target (nightly runs each for 10
+minutes). On a crash the recipe prints a `just fuzz-crash <target> <artifact>` line, which
+reproduces the input and then minimizes it. Save the minimized input as a regression test and fix
+it in the same PR. Corpora live in `harness/fuzz/corpus/`; run `cargo fuzz cmin` before committing
+them. Part of [tier 3](/hardening/tiers.md).

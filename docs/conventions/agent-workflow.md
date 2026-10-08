@@ -20,27 +20,28 @@ disagree. Recall and record knowledge as described in [project memory](/conventi
 | Tier 1: everything CI runs on a PR (pre-push runs `just ci-fast`) | `just ci` |
 | Per-worktree stack and server; URLs in `.harness/app.json` | `just up`, `just down`, `just status` |
 | End-to-end tests and latency budgets (needs `just up`) | `just e2e` |
-| See the app | `just logs-errors`, `just logs-request <id>`, `just q-logs`, `just q-metrics`, `just q-traces`, `just trace <id>` |
+| See the app | `just logs`, `just logs <request_id>`, `just query <backend> '<query>'`, `just trace <id>` |
 | Deterministic simulation | `just dst` or `just dst SEEDS=1000` |
 | Performance signals (never gate) | `just perf` |
 | Fuzzing, sanitizers, full proofs, mutants | `just harden` |
 | Regenerate `docs/generated/` after review | `just docs` |
 | Validate project memory | `just knowledge` |
 
-`just --list` shows every recipe. What each tier runs and where: [check tiers](/hardening/tiers.md).
+`just --list` shows the menu by group; hooks and CI also call private recipes, which each check's
+`repro` names. What each tier runs and where: [check tiers](/hardening/tiers.md).
 Each worktree gets its own ports and stack: [port allocation](/architecture/port-allocation.md).
 Setup and the stack lifecycle: [setup and worktrees](/workflows/setup.md); what runs on commit and
 push: [git hooks](/workflows/git-hooks.md); CI: [CI workflows](/workflows/ci.md).
 
 ## Seeing what the app does
 
-1. `just up`, reproduce, then `just logs-errors` (fast, the local JSON log).
+1. `just up`, reproduce, then `just logs` (fast, the local JSON log).
 2. Need history or cross-request data: the Victoria MCP servers (victoriametrics, victorialogs,
-   victoriatraces) or `just q-logs`, `just q-metrics`, `just q-traces`.
+   victoriatraces) or `just query logs|metrics|traces '<query>'`.
 3. Budgets: `just budgets`. Ready-made queries: [canned queries](/observability/queries.md).
 
 Query and aggregate; never dump raw logs into context. API error bodies carry a `request_id`:
-pass it to `just logs-request`.
+pass it to `just logs`.
 
 ## When something fails
 

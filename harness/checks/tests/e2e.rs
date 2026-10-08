@@ -46,7 +46,7 @@ async fn item_lifecycle() {
     );
     assert!(
         request_id.is_some(),
-        "error bodies carry request_id for just logs-request"
+        "error bodies carry request_id for just logs"
     );
 }
 

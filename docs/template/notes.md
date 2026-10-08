@@ -124,7 +124,7 @@ Generated from the {{template_repo}} at {{template_version}}.
   linux/arm64 binary, so cargo-insta comes from the `cargo:` backend; and parallel `cargo install`s
   each triggered rustup to install the pinned toolchain and raced on its components, so
   `mise.toml` has `[hooks] preinstall = "rustup toolchain install"` (a no-op once installed).
-- **Offline cargo-deny** (`just deny-offline`, a pre-commit step) runs `cargo fetch --locked`
+- **Offline cargo-deny** (`just deny offline`, a pre-commit step) runs `cargo fetch --locked`
   first: `cargo metadata --offline` needs every platform's crates (for example `windows-sys`),
   and a Linux build only downloads the host's.
 - **Gungraun in containers:** Valgrind runs under `setarch -R` (ASLR off, for reproducible
@@ -147,7 +147,12 @@ Generated from the {{template_repo}} at {{template_version}}.
 - **Template repository hooks.** cargo-generate's placeholders make hk.pkl's Rust steps fail in
   the template repository itself, so its `mise.toml` (not `mise.toml.liquid`) sets
   `HK_FILE=template.hk.pkl`: secrets, actionlint, the justfile lint and `just knowledge` run there,
-  and the Rust steps are skipped. hk.pkl is exercised by `just template-ci`.
+  and the Rust steps are skipped. hk.pkl is exercised by the template repository's `template-ci` recipe.
+- **Recipe menu.** `just --list` groups recipes (setup, tiers, stack, observe, checks, hardening, ci)
+  and lists them in file order; recipes that only hooks, CI or the gates call are private (callable,
+  unlisted). Variants that differed by one flag are arguments: `fmt --check`, `deny offline`,
+  `kani full`, `fuzz [target] [secs]`, `logs [request_id]`, `query <backend>`. A test in
+  harness/checks fails on a `just <recipe>` in docs/ that names no recipe.
 
 ## Verified values
 

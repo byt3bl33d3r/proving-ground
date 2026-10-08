@@ -10,7 +10,7 @@ import "package://github.com/jdx/hk/releases/download/v2.5.0/hk@2.5.0#/Builtins.
 local lint = new Mapping<String, Step> {
   ["cargo-fmt"] {
     glob = List("**/*.rs")
-    check = new CommandSpec { command = "just fmt-check"; effect = "read" }
+    check = new CommandSpec { command = "just fmt --check"; effect = "read" }
     fix = new CommandSpec { command = "just fmt"; effect = "write" }
   }
   ["taplo"] = Builtins.taplo_format
@@ -28,7 +28,7 @@ local lint = new Mapping<String, Step> {
   }
   ["deny-offline"] {
     glob = List("**/Cargo.toml", "Cargo.lock", "deny.toml")
-    check = new CommandSpec { command = "just deny-offline"; effect = "read" }
+    check = new CommandSpec { command = "just deny offline"; effect = "read" }
   }
   ["actionlint"] = Builtins.actionlint
   ["just-recipes"] {

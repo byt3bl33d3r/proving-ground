@@ -4,7 +4,7 @@ title: Test strategy
 description: The kinds of tests (unit, property, snapshot, golden logs, transcripts, architecture, e2e, DST) and where each one lives.
 tags: [testing, nextest, insta, proptest, trycmd]
 status: stable
-code_refs: [.config/nextest.toml, crates/{{project-name}}-server/tests/api.rs, crates/{{project-name}}-core/tests/golden_logs.rs, crates/{{project-name}}-cli/tests/cmd, harness/checks/tests/arch.rs, harness/checks/tests/e2e.rs, harness/dst]
+code_refs: [.config/nextest.toml, crates/{{project-name}}-server/tests/api.rs, crates/{{project-name}}-core/tests/golden_logs.rs, crates/{{project-name}}-cli/tests/cmd, harness/checks/tests/arch.rs, harness/checks/tests/recipes.rs, harness/checks/tests/e2e.rs, harness/dst]
 ---
 
 # Test strategy
@@ -16,7 +16,7 @@ code_refs: [.config/nextest.toml, crates/{{project-name}}-server/tests/api.rs, c
 | API snapshots | insta JSON, ids redacted | `crates/<project>-server/tests/api.rs` (router via `oneshot`) | `just test` |
 | Golden logs | JSON layer into memory | `crates/<project>-core/tests/golden_logs.rs` | `just test` |
 | CLI transcripts | trycmd | `crates/<project>-cli/tests/cmd/*.toml` | `just test` |
-| Architecture | `cargo metadata` + source scans | `harness/checks/tests/arch.rs` | `just test` |
+| Architecture | `cargo metadata` + source scans; every `just <recipe>` in docs/ exists | `harness/checks/tests/arch.rs`, `recipes.rs` | `just test` |
 | End to end | CLI client against `just up` | `harness/checks/tests/e2e.rs` | `just e2e` |
 | DST | turmoil + mad-turmoil + buggify | `harness/dst` | `just dst` |
 

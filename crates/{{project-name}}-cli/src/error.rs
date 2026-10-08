@@ -73,7 +73,7 @@ impl CliError {
         }
     }
 
-    /// The server's request id, for `just logs-request <id>`.
+    /// The server's request id, for `just logs <request_id>`.
     pub fn request_id(&self) -> Option<&str> {
         match self {
             Self::Usage { request_id, .. }

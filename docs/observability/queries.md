@@ -9,7 +9,7 @@ code_refs: [justfile]
 
 # Canned queries
 
-Run them with `just q-logs`, `just q-traces`, `just q-metrics`, or through the Victoria MCP
+Run them with `just query logs|traces|metrics '<query>'`, or through the Victoria MCP
 servers. Every recipe caps its output (200 lines for logs and traces); aggregate with
 `| stats ...` instead of paging through raw rows. Field names below were read from each
 backend's `field_names` endpoint; they are listed in [fields](/observability/fields.md).

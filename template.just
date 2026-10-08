@@ -1,8 +1,10 @@
 # Recipes for the template repository itself (imported by the justfile with `import?`;
 # cargo-generate drops this file, so generated projects never see these recipes).
 
-# Generate a project and run the template's acceptance steps on it (what template-ci.yml runs).
-# LICENSE picks the license choice; KEEP=1 keeps the generated project for inspection.
+# What template-ci.yml runs. REPRODUCE=1 also diffs the generated tree against the pre-template tag.
+
+# Generate a project and run the template's acceptance steps on it (LICENSE=<choice>; KEEP=1 keeps the project)
+[group('template')]
 template-ci:
     #!/usr/bin/env bash
     set -euo pipefail

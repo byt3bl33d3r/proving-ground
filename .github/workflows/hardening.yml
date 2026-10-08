@@ -38,7 +38,7 @@ jobs:
           - dst SEEDS=10000 START=90000
           - asan
           - tsan
-          - kani-full
+          - kani full
           - mutants
     runs-on: ubuntu-latest
     timeout-minutes: 90
