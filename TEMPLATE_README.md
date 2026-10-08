@@ -77,12 +77,15 @@ echo 'eval "$(mise activate zsh)"' >> ~/.zshrc
 just template-ci                       # generate demo-app, bootstrap, ci, up, e2e, down, isolation
 KEEP=1 just template-ci                # keep the generated project to inspect it
 LICENSE=Proprietary just template-ci   # another license choice
+just template-licenses                 # render every license choice (seconds, no build)
 ```
 
 Make a change by generating a project (`cargo generate --path . --name demo-app`), making and
 testing the change there, then porting it back with names replaced by placeholders.
-`template-ci.yml` runs `just template-ci` for every license choice once the repository is on
-GitHub.
+`template-ci.yml` runs `just template-licenses`, then `just template-ci` on the default license
+(the license only changes one line of `Cargo.toml`). It generates demo-app into a fixed directory
+first (`just template-generate`) so `Swatinem/rust-cache` can restore the generated workspaces'
+`target/` dirs; only `main` saves the cache.
 
 ## Releases and upgrades
 

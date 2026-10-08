@@ -3,6 +3,36 @@
 
 # What template-ci.yml runs. REPRODUCE=1 also diffs the generated tree against the pre-template tag.
 
+# template-ci.yml generates first so the Rust cache step can see the generated workspaces.
+# Generate demo-app into $TEMPLATE_CI_DIR (LICENSE=<choice>)
+[group('template')]
+template-generate:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    dir="${TEMPLATE_CI_DIR:?set TEMPLATE_CI_DIR to the directory to generate demo-app into}"
+    mkdir -p "$dir"
+    cargo generate --path "{{ root }}" --name demo-app --destination "$dir" --silent \
+      --define description="A Rust service" --define gh_owner=acme --define license="${LICENSE:-MIT OR Apache-2.0}" >&2
+
+# Cargo.toml's license field is the only output that depends on the license choice.
+# Render every license choice and check Cargo.toml's license field
+[group('template')]
+template-licenses:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    work=$(mktemp -d "${RUNNER_TEMP:-${TMPDIR:-/tmp}}/template-licenses.XXXXXX"); trap 'rm -rf "$work"' EXIT
+    taplo get -f "{{ root }}/cargo-generate.toml" placeholders.license.choices | while IFS= read -r license; do
+      expected=$license; [ "$license" != Proprietary ] || expected=LicenseRef-Proprietary
+      dir="$work/$(printf %s "$license" | tr -c 'A-Za-z0-9' -)"; mkdir -p "$dir"
+      out=$(cargo generate --path "{{ root }}" --name demo-app --destination "$dir" --silent --vcs none \
+        --define description="A Rust service" --define gh_owner=acme --define license="$license" 2>&1) \
+        || { echo "$out" >&2; exit 1; }
+      actual=$(sed -n 's/^license = "\(.*\)"$/\1/p' "$dir/demo-app/Cargo.toml")
+      [ "$actual" = "$expected" ] || { echo "license \"$license\" rendered Cargo.toml license = \"$actual\", expected \"$expected\"" >&2; exit 1; }
+      echo "ok    $license" >&2
+    done
+
+# TEMPLATE_CI_DIR=<dir> runs on the demo-app that template-generate just put there and keeps the dir.
 # Generate a project and run the template's acceptance steps on it (LICENSE=<choice>; KEEP=1 keeps the project)
 [group('template')]
 template-ci:
@@ -11,17 +41,23 @@ template-ci:
     # This repo's mise.toml points hk at template.hk.pkl; the generated project must use its own
     # hk.pkl, and mise does not unset variables inherited from a parent directory's config.
     unset HK_FILE
-    work=$(mktemp -d "${RUNNER_TEMP:-${TMPDIR:-/tmp}}/template-ci.XXXXXX")
+    work=${TEMPLATE_CI_DIR:-$(mktemp -d "${RUNNER_TEMP:-${TMPDIR:-/tmp}}/template-ci.XXXXXX")}
     report="{{ root }}/target/harness/template-ci.json"; mkdir -p "$(dirname "$report")"
-    [ "${KEEP:-0}" = 1 ] || trap 'cd /; (cd "$work/demo-app-2" 2>/dev/null && just down >/dev/null 2>&1); (cd "$work/demo-app" 2>/dev/null && just down >/dev/null 2>&1); rm -rf "$work"' EXIT
+    # A fixed TEMPLATE_CI_DIR outlives the run: template-ci.yml saves the Rust cache from it afterwards.
+    [ "${KEEP:-0}" = 1 ] || trap 'cd /; (cd "$work/demo-app-2" 2>/dev/null && just down >/dev/null 2>&1); (cd "$work/demo-app" 2>/dev/null && just down >/dev/null 2>&1); [ -n "${TEMPLATE_CI_DIR:-}" ] || rm -rf "$work"' EXIT
     step() { echo "── $*" >&2; }
     # Prints the seconds a command took; callers add `|| exit 1` because set -e does not reach
     # into command substitutions.
     timed() { local start; start=$(date +%s); "$@" >&2 || return 1; echo $(( $(date +%s) - start )); }
 
     step "1. generate demo-app (license: ${LICENSE:-MIT OR Apache-2.0})"
-    cargo generate --path "{{ root }}" --name demo-app --destination "$work" --silent \
-      --define description="A Rust service" --define gh_owner=acme --define license="${LICENSE:-MIT OR Apache-2.0}" >&2
+    if [ -d "$work/demo-app" ]; then
+      git -C "$work/demo-app" rev-parse -q --verify HEAD >/dev/null 2>&1 \
+        && { echo "$work/demo-app has commits from an earlier run; use a fresh TEMPLATE_CI_DIR" >&2; exit 1; }
+      echo "using $work/demo-app from just template-generate" >&2
+    else
+      TEMPLATE_CI_DIR="$work" just template-generate
+    fi
     cd "$work/demo-app"
 
     step "2. no leftover Liquid in templated files"
@@ -47,7 +83,8 @@ template-ci:
     eval "$(mise env -s bash)"
     just bootstrap >&2
     hk validate 2>&1 | grep -q '/demo-app/hk.pkl is valid' || { echo "hk is not using the generated project's hk.pkl" >&2; exit 1; }
-    git add -A && git -c user.name=template-ci -c user.email=template-ci@localhost commit -qm "lockfiles"
+    # In CI the Rust cache step has already resolved some lockfiles, so this commit can be empty.
+    git add -A && git -c user.name=template-ci -c user.email=template-ci@localhost commit -qm "lockfiles" --allow-empty
 
     step "5. tiers and harness"
     cold_check=$(timed just check) || exit 1
