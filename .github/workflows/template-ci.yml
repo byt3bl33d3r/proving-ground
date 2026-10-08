@@ -1,5 +1,7 @@
 # The template's own test (template repository only; removed on generation): generate a project
-# for every license choice and run the acceptance steps on it (`just template-ci`).
+# for every license choice and run the acceptance steps on it (`just template-ci`), and validate
+# the docs/ bundle (`just knowledge`). The other workflows are for generated projects and are
+# disabled on this repository (see TEMPLATE_README.md).
 name: template-ci
 
 on:
@@ -7,6 +9,10 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+
+concurrency:
+  group: template-ci-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -37,5 +43,25 @@ jobs:
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: template-ci-${{ strategy.job-index }}
+          path: target/harness/
+          if-no-files-found: ignore
+
+  knowledge:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - uses: jdx/mise-action@2d8d4cafcbd33be2ea37d2b6f5ad595363d1f1ca # v5.1.1
+      - run: just knowledge
+      - if: github.event_name == 'pull_request'
+        run: just knowledge-pr ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.number }}
+      - if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: harness-knowledge
           path: target/harness/
           if-no-files-found: ignore

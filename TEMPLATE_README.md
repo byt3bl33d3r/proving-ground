@@ -64,6 +64,10 @@ echo 'eval "$(mise activate zsh)"' >> ~/.zshrc
   repository's `mise.toml`. hk.pkl's Rust steps cannot run on unrendered crate names, so they are
   skipped here; the secrets scan, actionlint, the justfile lint and `just knowledge` still run.
   `just template-ci` exercises hk.pkl in the generated project.
+- **Workflows.** `ci.yml`, `perf.yml`, `hardening.yml` and `gardening.yml` are for generated projects
+  and are disabled on this repository (`gh workflow disable <file>`; repeat after forking or
+  re-creating it): the crates do not compile here, and the crons would open failure issues every
+  night. `template-ci.yml` is the only active workflow: the acceptance pass plus `just knowledge`.
 - **Lockfiles** are not in the template (placeholder package names cannot be locked);
   `just bootstrap` generates them and generated projects commit them.
 
