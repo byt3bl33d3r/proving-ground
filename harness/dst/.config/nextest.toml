@@ -2,3 +2,10 @@
 slow-timeout = "5m"
 test-threads = "num-cpus"
 fail-fast = false
+
+# CI sets NEXTEST_PROFILE=ci for every recipe, this one included (harness/checks/tests/nextest.rs).
+[profile.ci]
+retries = 0 # a failing seed is a bug, not a retry
+
+[profile.ci.junit]
+path = "junit.xml" # harness/dst/target/nextest/ci/junit.xml

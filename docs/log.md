@@ -8,3 +8,4 @@
 * **Update**: agent-workflow names `just --show <recipe>` as the way to read a private recipe.
 * **Update**: Grouped the justfile menu and made its plumbing private; `logs`, `query`, `fuzz`, `fuzz-crash`, `kani [full]`, `deny [offline]` and `fmt [--check]` replace the one-flag variants and `status` carries the UI URLs; agent-workflow, errors, queries, telemetry, setup, fuzzing, kani and the template notes name the new recipes; a test in harness/checks verifies that every `just <recipe>` in docs/ exists.
 * **Creation**: Added the workflows section (setup and worktrees, git hooks, CI workflows, upgrading from the template) and hardening/miri; tiers documents mutation testing and the release tier; template/notes records the act gaps.
+* **Update**: testing/strategy: harness/dst has its own nextest config and needs every profile CI selects; harness/checks/tests/nextest.rs enforces it (template-ci failed on `profile ci not found`).
