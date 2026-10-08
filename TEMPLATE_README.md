@@ -16,7 +16,7 @@ template repository; generation removes them.
 ```bash
 cargo generate --path /path/to/proving-ground --name my-service
 # later, once the repository is published:
-cargo generate --git <url> --tag v1.0.0 --name my-service
+cargo generate byt3bl33d3r/proving-ground --tag v1.0.0 --name my-service
 ```
 
 Four prompts (all have defaults, so `--silent` works):
